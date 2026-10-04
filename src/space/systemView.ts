@@ -4,6 +4,7 @@ import type { CubeBaker } from '../render/cubeBaker';
 import type { QualityPreset } from '../core/settings';
 import { GAME_AU, orbitOffset, type Body, type PlanetBody, type StarSystem } from './system';
 import { PlanetView, StarView, type BodyFrame } from './bodies';
+import { AsteroidField, fieldsFor } from './asteroids';
 
 const pointsVert = /* glsl */ `
 attribute vec3 aColor;
@@ -46,6 +47,8 @@ export class SystemView {
   private tmp2 = new THREE.Vector3();
   private sunRad = new THREE.Vector3();
   nearest: PlanetView | null = null;
+  readonly asteroids: AsteroidField;
+  readonly byId = new Map<string, PlanetView>();
 
   constructor(
     readonly system: StarSystem,
@@ -62,6 +65,7 @@ export class SystemView {
     for (const b of all) {
       const v = new PlanetView(b, baker, system.ecliptic);
       this.views.push(v);
+      this.byId.set(b.id, v);
       this.root.add(v.group);
       v.requestFace(b.kind === 'moon' ? Math.max(64, quality.planetFace / 2) : quality.planetFace, quality.cloudFace / 2, 5);
     }
@@ -89,6 +93,12 @@ export class SystemView {
     this.points.frustumCulled = false;
     this.points.renderOrder = -50;
     this.root.add(this.points);
+
+    this.asteroids = new AsteroidField(fieldsFor(system), quality, (id) => ({
+      pos: this.states.get(id)?.pos ?? new THREE.Vector3(),
+      axis: this.byId.get(id)?.axis,
+    }));
+    this.root.add(this.asteroids.root);
   }
 
   /** Positions of every body at time t (system frame). */
@@ -159,6 +169,8 @@ export class SystemView {
     (this.points.geometry.attributes.aColor as THREE.BufferAttribute).needsUpdate = true;
     (this.points.geometry.attributes.aSize as THREE.BufferAttribute).needsUpdate = true;
 
+    this.asteroids.update(time, shipPos, starCentre);
+
     // resolution management: the world filling the window gets the big cube map
     this.nearest = best;
     for (const v of this.views) {
@@ -208,7 +220,13 @@ export class SystemView {
     return { body: best, dist: bestD };
   }
 
+  /** Position of a body in the system frame (last computed). */
+  bodyPos(id: string): THREE.Vector3 | undefined {
+    return this.states.get(id)?.pos;
+  }
+
   dispose() {
+    this.asteroids.dispose();
     this.star.dispose();
     for (const v of this.views) v.dispose();
     this.points.geometry.dispose();

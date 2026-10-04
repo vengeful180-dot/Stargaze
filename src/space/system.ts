@@ -377,7 +377,10 @@ export function generateSystem(ref: SystemRef): StarSystem {
       moons: [],
       mass: massE,
       gravity: massE / (radius / EARTH_RADIUS) ** 2,
-      temperatureC: Math.round(tempC + (atmosphere ? atmosphere.density * 30 : 0)),
+      // temperate types report temperate numbers; others get a greenhouse nudge from their air
+      temperatureC: Math.round(
+        type === 'terran' || type === 'ocean' ? Math.min(32, Math.max(-12, tempC * 0.6 + 6)) : tempC + (atmosphere ? atmosphere.density * 30 : 0),
+      ),
       ringRocks: !!rings && prng.chance(0.7),
       special,
     };

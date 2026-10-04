@@ -1,11 +1,12 @@
 // Temporary cabin used until the Blender cabin lands: just enough frame to judge window framing.
 import * as THREE from 'three';
+import { markCabin } from './materials';
 
 export function makePlaceholderCabin(): THREE.Group {
   const g = new THREE.Group();
-  const wood = new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: 0.6 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x15100c, roughness: 0.8 });
-  const brass = new THREE.MeshStandardMaterial({ color: 0xb08a4a, roughness: 0.35, metalness: 1 });
+  const wood = markCabin(new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: 0.6 }));
+  const dark = markCabin(new THREE.MeshStandardMaterial({ color: 0x15100c, roughness: 0.8 }));
+  const brass = markCabin(new THREE.MeshStandardMaterial({ color: 0xb08a4a, roughness: 0.35, metalness: 1 }));
   // console
   const console_ = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.08, 48, 1, false, -Math.PI * 0.35, Math.PI * 0.7), wood);
   console_.rotation.y = Math.PI;

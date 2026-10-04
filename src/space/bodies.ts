@@ -329,6 +329,11 @@ export class PlanetView {
     return this.faceSize > 0;
   }
 
+  /** Spin axis (ring plane normal) in the system frame. */
+  get axis(): THREE.Vector3 {
+    return new THREE.Vector3(0, 1, 0).applyQuaternion(this.axisQuat);
+  }
+
   /** Position (scene coordinates), orientation and lighting for this frame. */
   update(f: BodyFrame, centre: THREE.Vector3, sunRad: THREE.Vector3, orbitAngle: number) {
     const b = this.body;

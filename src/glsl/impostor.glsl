@@ -4,7 +4,7 @@
 
 uniform mat4 projectionMatrix;
 uniform mat4 modelViewMatrix;
-#ifdef USE_LOGDEPTHBUF
+#ifdef USE_LOGARITHMIC_DEPTH_BUFFER
 uniform float logDepthBufFC;
 #endif
 
@@ -27,7 +27,7 @@ float rayCentreDist(vec3 ro, vec3 rd) {
 float writeDepth(vec3 objPos) {
   vec4 v = modelViewMatrix * vec4(objPos, 1.0);
   vec4 c = projectionMatrix * v;
-#ifdef USE_LOGDEPTHBUF
+#ifdef USE_LOGARITHMIC_DEPTH_BUFFER
   return log2(max(1e-6, 1.0 + c.w)) * logDepthBufFC * 0.5;
 #else
   return clamp(c.z / c.w * 0.5 + 0.5, 0.0, 1.0);

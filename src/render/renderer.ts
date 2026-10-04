@@ -3,12 +3,14 @@ import { BloomEffect, BlendFunction, EffectComposer, EffectPass, RenderPass } fr
 import * as THREE from 'three';
 import type { QualityPreset } from '../core/settings';
 import { GradeEffect } from './grade';
+import { WarpEffect } from './warp';
 
 export class Renderer {
   readonly gl: THREE.WebGLRenderer;
   readonly composer: EffectComposer;
   readonly bloom: BloomEffect;
   readonly grade: GradeEffect;
+  readonly warp: WarpEffect;
   private renderPass: RenderPass;
   private effectPass: EffectPass;
   private preset: QualityPreset;
@@ -51,7 +53,8 @@ export class Renderer {
       levels: preset.bloomLevels,
     });
     this.grade = new GradeEffect();
-    this.effectPass = new EffectPass(camera, this.bloom, this.grade);
+    this.warp = new WarpEffect();
+    this.effectPass = new EffectPass(camera, this.warp, this.bloom, this.grade);
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.effectPass);
   }
