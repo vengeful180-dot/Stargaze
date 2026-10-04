@@ -204,10 +204,11 @@ pad, filter dip) → A' / B' → outro (filter close, fade or tape stop), with n
 
 ## Measurements (see `tools/audio/`)
 
-Mix targets are measured on the broadcast mix (before the radio): integrated loudness -17 to -18.5 LUFS
-per style, true peak below -3.5 dBTP, no clipped samples, DC < 1e-5, per-track loudness spread under
-1 LU over 10 minutes. The radio output at the default knob (0.75) and listening position sits around
--17.5 to -18.5 LUFS. A 10-minute run keeps 87-237 live nodes with no growth (15k nodes created, all
+Mix targets are measured on the broadcast mix (before the radio): integrated loudness -17.1 to -18.3 LUFS
+per style (95 s excerpts including the intro), true peak -4.1 to -6.5 dBTP, no clipped samples,
+DC < 1e-5, per-track loudness spread under 1 LU over 10 minutes. The radio output at the default knob
+(0.75), character 0.7 and listening position measures -16.7 to -18.1 LUFS with true peaks at or below
+-2.9 dBTP. A 10-minute run keeps 87-237 live nodes with no growth (15k nodes created, all
 released), at most 2 bands during handovers, ≤ 21 simultaneous synth voices and no voice steals. With
 drums and textures muted there are no impulsive clicks at note boundaries. A 300-track survey of the
 composer: 0 melody clashes, 0 off-scale or out-of-key notes, near-zero low-register crowding.
