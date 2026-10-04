@@ -49,6 +49,12 @@ export class CameraRig {
     this.clampTargets();
   }
 
+  /** Jump straight to a view (degrees; yaw positive = turn left like three.js). Used by tests and spots. */
+  setView(yawDeg: number, pitchDeg: number) {
+    this.yaw = this.targetYaw = yawDeg * DEG;
+    this.pitch = this.targetPitch = pitchDeg * DEG;
+  }
+
   zoom(steps: number) {
     this.targetFov = clamp(this.targetFov + steps * 4, 22, 85);
   }

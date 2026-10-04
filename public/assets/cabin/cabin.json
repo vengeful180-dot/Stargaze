@@ -1,0 +1,1899 @@
+{
+ "glb": "cabin.glb",
+ "textures": {
+  "albedo": "albedo.png",
+  "orm": "orm.png",
+  "normal": "normal.png",
+  "lm_a": "lm_a.png",
+  "lm_b": "lm_b.png",
+  "probe": "probe.png"
+ },
+ "lightmap": {
+  "encoding": "sqrt(E / scale)",
+  "scale": 8.0,
+  "res": 512
+ },
+ "emissive": {
+  "emit_warm": {
+   "color": [
+    1.0,
+    0.68,
+    0.36
+   ],
+   "strength": 60.0,
+   "group": "A"
+  },
+  "emit_strip": {
+   "color": [
+    1.0,
+    0.62,
+    0.3
+   ],
+   "strength": 9.0,
+   "group": "B"
+  },
+  "emit_screen": {
+   "color": [
+    0.95,
+    0.62,
+    0.32
+   ],
+   "strength": 2.2,
+   "group": "B"
+  },
+  "emit_orrery": {
+   "color": [
+    1.0,
+    0.72,
+    0.42
+   ],
+   "strength": 6.0,
+   "group": "B"
+  }
+ },
+ "lights": [
+  {
+   "name": "L_Pendant",
+   "group": "A",
+   "watts": 32.0
+  },
+  {
+   "name": "L_DeskLamp",
+   "group": "A",
+   "watts": 16.0
+  },
+  {
+   "name": "L_Sconce",
+   "group": "A",
+   "watts": 16.0
+  },
+  {
+   "name": "L_Fairy",
+   "group": "A",
+   "watts": 0.12
+  },
+  {
+   "name": "L_StarJar",
+   "group": "A",
+   "watts": 0.04
+  },
+  {
+   "name": "L_Galley",
+   "group": "B",
+   "watts": 5.0
+  },
+  {
+   "name": "L_Orrery",
+   "group": "B",
+   "watts": 0.25
+  }
+ ],
+ "emitters": {
+  "Light_DeskLampBulb": {
+   "group": "A",
+   "zone": "emit_warm",
+   "color": [
+    1.0,
+    0.68,
+    0.36
+   ],
+   "strength": 60.0
+  },
+  "Light_DeskStrip": {
+   "group": "B",
+   "zone": "emit_strip",
+   "color": [
+    1.0,
+    0.62,
+    0.3
+   ],
+   "strength": 9.0
+  },
+  "Light_Fairy": {
+   "group": "A",
+   "zone": "emit_warm",
+   "color": [
+    1.0,
+    0.68,
+    0.36
+   ],
+   "strength": 60.0
+  },
+  "Light_GalleyStrip": {
+   "group": "B",
+   "zone": "emit_strip",
+   "color": [
+    1.0,
+    0.62,
+    0.3
+   ],
+   "strength": 9.0
+  },
+  "Light_OrrerySun": {
+   "group": "B",
+   "zone": "emit_orrery",
+   "color": [
+    1.0,
+    0.72,
+    0.42
+   ],
+   "strength": 6.0
+  },
+  "Light_PendantBulb": {
+   "group": "A",
+   "zone": "emit_warm",
+   "color": [
+    1.0,
+    0.68,
+    0.36
+   ],
+   "strength": 60.0
+  },
+  "Light_SconceBulb": {
+   "group": "A",
+   "zone": "emit_warm",
+   "color": [
+    1.0,
+    0.68,
+    0.36
+   ],
+   "strength": 60.0
+  },
+  "Light_StarJar": {
+   "group": "A",
+   "zone": "emit_warm",
+   "color": [
+    1.0,
+    0.68,
+    0.36
+   ],
+   "strength": 60.0
+  }
+ },
+ "pivots": {
+  "Gauge_1_Needle": "y",
+  "Gauge_2_Needle": "y",
+  "Orrery_Arm_1": "y",
+  "Orrery_Arm_2": "y",
+  "Orrery_Arm_3": "y",
+  "Orrery_Arm_4": "y",
+  "Orrery_Arm_5": "y",
+  "Radio_Knob_Tune": "y",
+  "Radio_Knob_Volume": "y",
+  "Switch_1": "x",
+  "Switch_2": "x",
+  "Switch_3": "x",
+  "Switch_4": "x",
+  "Throttle_Lever": "x"
+ },
+ "radio": {
+  "pos": [
+   0.71904,
+   0.854,
+   -0.3507
+  ],
+  "facing": [
+   -0.89879,
+   0.0,
+   0.43837
+  ]
+ },
+ "nodes": [
+  "Door_Window_Glass",
+  "Gauge_1_Needle",
+  "Gauge_2_Needle",
+  "Glass_Canopy",
+  "Lamp_Desk",
+  "Lamp_DeskShade",
+  "Light_DeskLampBulb",
+  "Light_DeskStrip",
+  "Light_Fairy",
+  "Light_GalleyStrip",
+  "Light_OrrerySun",
+  "Light_PendantBulb",
+  "Light_SconceBulb",
+  "Light_StarJar",
+  "Mug",
+  "Mug_Tea",
+  "Orrery_Arm_1",
+  "Orrery_Arm_2",
+  "Orrery_Arm_3",
+  "Orrery_Arm_4",
+  "Orrery_Arm_5",
+  "Pendant_Shade",
+  "Porthole_Port_Glass",
+  "Porthole_Stbd_Glass",
+  "Radio_Body",
+  "Radio_Dial",
+  "Radio_Knob_Tune",
+  "Radio_Knob_Volume",
+  "Sconce_Shade",
+  "Screen_C",
+  "Screen_L",
+  "Screen_R",
+  "StarJar_Glass",
+  "Switch_1",
+  "Switch_2",
+  "Switch_3",
+  "Switch_4",
+  "Telescope",
+  "Telescope_Mount",
+  "Throttle_Lever"
+ ],
+ "lightmap_E": {
+  "A": {
+   "Back_Book_00": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_01": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_02": [
+    0.001,
+    0.0011
+   ],
+   "Back_Book_03": [
+    0.0002,
+    0.0002
+   ],
+   "Back_Book_04": [
+    0.014,
+    0.0141
+   ],
+   "Back_Book_05": [
+    0.0184,
+    0.0184
+   ],
+   "Back_Book_06": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_07": [
+    0.0057,
+    0.0058
+   ],
+   "Back_Book_08": [
+    0.0022,
+    0.0022
+   ],
+   "Back_Book_09": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_10": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_11": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_12": [
+    0.0025,
+    0.0025
+   ],
+   "Back_Book_13": [
+    0.0027,
+    0.0027
+   ],
+   "Back_Book_14": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_15": [
+    0.0088,
+    0.0093
+   ],
+   "Back_Book_16": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_17": [
+    0.0047,
+    0.0049
+   ],
+   "Back_Book_18": [
+    0.0048,
+    0.0048
+   ],
+   "Back_Book_19": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_20": [
+    0.0021,
+    0.0021
+   ],
+   "Back_Book_21": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_22": [
+    0.0045,
+    0.0045
+   ],
+   "Back_Book_23": [
+    0.0001,
+    0.0
+   ],
+   "Back_Book_24": [
+    0.0173,
+    0.0175
+   ],
+   "Back_Book_25": [
+    0.0166,
+    0.0166
+   ],
+   "Back_Book_26": [
+    0.0001,
+    0.0001
+   ],
+   "Back_Book_27": [
+    0.0002,
+    0.0002
+   ],
+   "Back_Book_28": [
+    0.0003,
+    0.0003
+   ],
+   "Back_Book_29": [
+    0.0093,
+    0.0094
+   ],
+   "Back_Book_30": [
+    0.0097,
+    0.0097
+   ],
+   "Back_Book_31": [
+    0.0002,
+    0.0
+   ],
+   "Back_Book_32": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_33": [
+    0.0006,
+    0.0006
+   ],
+   "Back_Book_34": [
+    0.0013,
+    0.0013
+   ],
+   "Back_Book_35": [
+    0.0029,
+    0.0029
+   ],
+   "Back_Book_36": [
+    0.0001,
+    0.0
+   ],
+   "Back_Book_37": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_38": [
+    0.0085,
+    0.0085
+   ],
+   "Back_Book_39": [
+    0.0001,
+    0.0001
+   ],
+   "Back_Book_40": [
+    0.1381,
+    0.1397
+   ],
+   "Back_Book_41": [
+    0.0402,
+    0.0392
+   ],
+   "Back_Book_42": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_43": [
+    0.026,
+    0.0261
+   ],
+   "Back_Book_44": [
+    0.0265,
+    0.0265
+   ],
+   "Back_Book_45": [
+    0.0274,
+    0.0275
+   ],
+   "Back_Book_46": [
+    0.0139,
+    0.0136
+   ],
+   "Back_Book_47": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_48": [
+    0.014,
+    0.0149
+   ],
+   "Back_Book_49": [
+    0.0003,
+    0.0
+   ],
+   "Back_Book_50": [
+    0.0064,
+    0.0066
+   ],
+   "Back_Book_51": [
+    0.0005,
+    0.0005
+   ],
+   "Back_Book_52": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_53": [
+    0.4258,
+    0.4495
+   ],
+   "Back_Book_54": [
+    0.9645,
+    0.9645
+   ],
+   "Back_Bookcase": [
+    0.1663,
+    0.9179
+   ],
+   "Back_Chart": [
+    0.2845,
+    0.2845
+   ],
+   "Back_Door": [
+    0.6823,
+    0.8501
+   ],
+   "Back_DoorFrame": [
+    0.0049,
+    0.0
+   ],
+   "Back_Frame": [
+    0.1929,
+    0.4811
+   ],
+   "Back_Hooks": [
+    0.8067,
+    0.9554
+   ],
+   "Back_Scarf": [
+    0.4771,
+    0.7262
+   ],
+   "Console_Binnacle": [
+    0.7777,
+    3.1177
+   ],
+   "Console_Cabinet_L": [
+    0.1758,
+    0.5451
+   ],
+   "Console_Cabinet_R": [
+    0.1193,
+    0.3038
+   ],
+   "Console_Deck": [
+    0.2645,
+    0.6251
+   ],
+   "Console_Desk": [
+    0.4989,
+    1.4641
+   ],
+   "Console_Drawer_L1": [
+    0.1757,
+    0.3131
+   ],
+   "Console_Drawer_L2": [
+    0.2156,
+    0.2519
+   ],
+   "Console_Drawer_R1": [
+    0.2187,
+    0.3336
+   ],
+   "Console_Drawer_R2": [
+    0.3065,
+    0.4318
+   ],
+   "Console_KneeWell": [
+    0.1065,
+    0.2182
+   ],
+   "Console_Pad": [
+    0.1342,
+    0.2482
+   ],
+   "Deck_Book_1": [
+    0.018,
+    0.0213
+   ],
+   "Deck_Book_2": [
+    0.0019,
+    0.0158
+   ],
+   "Door_Wheel": [
+    0.0,
+    0.0
+   ],
+   "Door_WindowFrame": [
+    0.0,
+    0.0
+   ],
+   "Fairy_Battery": [
+    0.0,
+    0.0
+   ],
+   "Fairy_Clips": [
+    0.0,
+    0.0
+   ],
+   "Fairy_Wire": [
+    0.0012,
+    0.0012
+   ],
+   "Frame_Arch_1": [
+    0.0106,
+    0.0
+   ],
+   "Frame_Arch_2": [
+    0.0011,
+    0.0
+   ],
+   "Frame_Junction": [
+    0.2734,
+    0.5621
+   ],
+   "Frame_Mullion_1": [
+    0.0004,
+    0.0
+   ],
+   "Frame_Mullion_2": [
+    0.0003,
+    0.0
+   ],
+   "Frame_Mullion_3": [
+    0.0003,
+    0.0
+   ],
+   "Frame_Mullion_4": [
+    0.0001,
+    0.0001
+   ],
+   "Frame_Mullion_5": [
+    0.0017,
+    0.0001
+   ],
+   "Frame_Sill": [
+    0.1997,
+    0.4061
+   ],
+   "Galley_Board": [
+    0.7036,
+    1.0991
+   ],
+   "Galley_Cabinet": [
+    0.0503,
+    0.0729
+   ],
+   "Galley_Door_1": [
+    0.4044,
+    0.5157
+   ],
+   "Galley_Door_2": [
+    0.4037,
+    0.5959
+   ],
+   "Galley_Door_3": [
+    0.3831,
+    0.5611
+   ],
+   "Galley_Drawer_1": [
+    0.4671,
+    0.7017
+   ],
+   "Galley_Drawer_2": [
+    0.4598,
+    0.7766
+   ],
+   "Galley_Drawer_3": [
+    0.384,
+    0.6348
+   ],
+   "Galley_Jar_1": [
+    0.0041,
+    0.0043
+   ],
+   "Galley_Jar_2": [
+    0.0,
+    0.0
+   ],
+   "Galley_Jar_3": [
+    0.0089,
+    0.0116
+   ],
+   "Galley_Kettle": [
+    0.343,
+    0.749
+   ],
+   "Galley_Mug_1": [
+    1.0192,
+    1.0192
+   ],
+   "Galley_Mug_2": [
+    2.1185,
+    2.1185
+   ],
+   "Galley_MugTree": [
+    2.1283,
+    2.1283
+   ],
+   "Galley_Shelf": [
+    0.0799,
+    0.0958
+   ],
+   "Galley_Tin_1": [
+    0.6105,
+    2.0542
+   ],
+   "Galley_Tin_2": [
+    0.0327,
+    0.043
+   ],
+   "Galley_Tin_3": [
+    0.0639,
+    0.067
+   ],
+   "Galley_Top": [
+    0.2162,
+    0.6004
+   ],
+   "Gauge_1": [
+    0.0068,
+    0.0054
+   ],
+   "Gauge_1_Face": [
+    0.0592,
+    0.0592
+   ],
+   "Gauge_1_Needle": [
+    0.0256,
+    0.0595
+   ],
+   "Gauge_2": [
+    0.0172,
+    0.0181
+   ],
+   "Gauge_2_Face": [
+    0.0,
+    0.0
+   ],
+   "Gauge_2_Needle": [
+    0.0219,
+    0.0383
+   ],
+   "Hanger_Cords": [
+    0.0833,
+    0.0833
+   ],
+   "Hanger_Hook": [
+    0.0823,
+    0.0823
+   ],
+   "Lamp_Desk": [
+    2.1448,
+    5.1162
+   ],
+   "Lamp_DeskShade": [
+    18.4175,
+    34.3738
+   ],
+   "Lamp_Harp": [
+    0.0819,
+    0.0819
+   ],
+   "Logbook": [
+    0.2624,
+    0.4144
+   ],
+   "Mug": [
+    0.0907,
+    0.209
+   ],
+   "Mug_Tea": [
+    0.9957,
+    0.9957
+   ],
+   "Nook_BackCushion": [
+    0.7283,
+    1.3868
+   ],
+   "Nook_Bench": [
+    0.2224,
+    0.4246
+   ],
+   "Nook_Blanket": [
+    0.9589,
+    2.2648
+   ],
+   "Nook_Book": [
+    1.0029,
+    1.0029
+   ],
+   "Nook_Cushion": [
+    0.437,
+    1.0447
+   ],
+   "Nook_Pillow_1": [
+    0.5326,
+    0.8787
+   ],
+   "Nook_Pillow_2": [
+    0.8101,
+    1.4201
+   ],
+   "Orrery_Arm_1": [
+    0.9959,
+    0.9959
+   ],
+   "Orrery_Arm_2": [
+    0.2438,
+    0.3252
+   ],
+   "Orrery_Arm_3": [
+    0.0,
+    0.0
+   ],
+   "Orrery_Arm_4": [
+    0.0,
+    0.0
+   ],
+   "Orrery_Arm_5": [
+    0.01,
+    0.0428
+   ],
+   "Orrery_Base": [
+    0.2162,
+    0.3609
+   ],
+   "Pencil": [
+    0.0056,
+    0.0001
+   ],
+   "Pendant_Cap": [
+    0.0082,
+    0.0082
+   ],
+   "Pendant_Cord": [
+    0.0272,
+    0.0272
+   ],
+   "Pendant_Rose": [
+    0.0279,
+    0.0279
+   ],
+   "Pendant_Shade": [
+    23.1864,
+    42.7495
+   ],
+   "Plant_Bookcase_Leaves": [
+    0.046,
+    0.0666
+   ],
+   "Plant_Bookcase_Pot": [
+    0.2931,
+    0.7009
+   ],
+   "Plant_Bookcase_Soil": [
+    0.0272,
+    0.0272
+   ],
+   "Plant_DeckL_Leaves": [
+    0.3558,
+    0.2089
+   ],
+   "Plant_DeckL_Pot": [
+    0.157,
+    0.3154
+   ],
+   "Plant_DeckL_Soil": [
+    0.1289,
+    0.4111
+   ],
+   "Plant_DeckR_Leaves": [
+    0.041,
+    0.0641
+   ],
+   "Plant_DeckR_Pot": [
+    0.1466,
+    0.1397
+   ],
+   "Plant_DeckR_Soil": [
+    0.0549,
+    0.0746
+   ],
+   "Plant_Hanging_Leaves": [
+    0.1332,
+    0.1426
+   ],
+   "Plant_Hanging_Pot": [
+    0.1528,
+    0.2819
+   ],
+   "Plant_Herb_1_Leaves": [
+    0.3748,
+    1.1776
+   ],
+   "Plant_Herb_1_Pot": [
+    0.2378,
+    0.4171
+   ],
+   "Plant_Herb_1_Soil": [
+    0.0,
+    0.0
+   ],
+   "Plant_Herb_2_Leaves": [
+    0.1633,
+    0.3379
+   ],
+   "Plant_Herb_2_Pot": [
+    0.3214,
+    1.453
+   ],
+   "Plant_Herb_2_Soil": [
+    0.0,
+    0.0
+   ],
+   "Porthole_Port_Frame": [
+    0.0,
+    0.0
+   ],
+   "Porthole_Stbd_Frame": [
+    0.0025,
+    0.0001
+   ],
+   "Radio_Aerial": [
+    0.1032,
+    0.1032
+   ],
+   "Radio_Body": [
+    0.1248,
+    0.239
+   ],
+   "Radio_DialBezel": [
+    0.008,
+    0.0288
+   ],
+   "Radio_Feet": [
+    0.3226,
+    0.3226
+   ],
+   "Radio_Grille": [
+    0.7392,
+    3.4914
+   ],
+   "Radio_Knob_Tune": [
+    0.0145,
+    0.0002
+   ],
+   "Radio_Knob_Volume": [
+    0.0,
+    0.0
+   ],
+   "Radio_Strap": [
+    0.1768,
+    0.293
+   ],
+   "Rug": [
+    0.8155,
+    0.9619
+   ],
+   "Sconce": [
+    0.8997,
+    0.8997
+   ],
+   "Sconce_Shade": [
+    1.8401,
+    1.8401
+   ],
+   "Screen_C_Bezel": [
+    0.0014,
+    0.0008
+   ],
+   "Screen_L_Bezel": [
+    0.0004,
+    0.0013
+   ],
+   "Screen_R_Bezel": [
+    0.0004,
+    0.0006
+   ],
+   "Seat_Arm_L": [
+    0.1076,
+    0.5126
+   ],
+   "Seat_Arm_R": [
+    0.155,
+    0.3566
+   ],
+   "Seat_Back": [
+    0.1951,
+    0.3033
+   ],
+   "Seat_Blanket": [
+    0.3108,
+    0.7253
+   ],
+   "Seat_Cushion": [
+    0.1856,
+    0.5672
+   ],
+   "Seat_Pedestal": [
+    0.0,
+    0.0
+   ],
+   "Seat_Shell": [
+    0.4398,
+    0.482
+   ],
+   "Seat_Side_L": [
+    0.0436,
+    0.1498
+   ],
+   "Seat_Side_R": [
+    0.0441,
+    0.0449
+   ],
+   "Seat_Tray": [
+    0.0305,
+    0.0659
+   ],
+   "Shell_Back": [
+    0.2282,
+    0.4676
+   ],
+   "Shell_Floor": [
+    0.2429,
+    0.6835
+   ],
+   "Shell_Lining": [
+    0.4542,
+    0.9701
+   ],
+   "Shell_Lower_L": [
+    0.3778,
+    0.654
+   ],
+   "Shell_Lower_R": [
+    0.2653,
+    0.4165
+   ],
+   "Shell_PortholePanel_Port": [
+    0.51,
+    1.1792
+   ],
+   "Shell_PortholePanel_Stbd": [
+    0.3292,
+    0.4874
+   ],
+   "StarJar_Lid": [
+    0.5167,
+    0.5167
+   ],
+   "StarJar_Wire": [
+    0.5162,
+    0.5162
+   ],
+   "Switch_1": [
+    0.668,
+    0.668
+   ],
+   "Switch_2": [
+    0.0269,
+    0.0269
+   ],
+   "Switch_3": [
+    0.0517,
+    0.0517
+   ],
+   "Switch_4": [
+    0.0495,
+    0.0495
+   ],
+   "Switch_Plate": [
+    0.0034,
+    0.0073
+   ],
+   "Telescope": [
+    0.0002,
+    0.0002
+   ],
+   "Telescope_Mount": [
+    0.0454,
+    0.0519
+   ],
+   "Throttle_Base": [
+    0.0104,
+    0.0008
+   ],
+   "Throttle_Lever": [
+    0.0694,
+    0.1774
+   ],
+   "Trim_Dado_L": [
+    0.5487,
+    1.1392
+   ],
+   "Trim_Dado_R1": [
+    0.4337,
+    0.4517
+   ],
+   "Trim_Dado_R2": [
+    0.3779,
+    0.4135
+   ]
+  },
+  "B": {
+   "Back_Book_00": [
+    0.0077,
+    0.0077
+   ],
+   "Back_Book_01": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_02": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_03": [
+    0.0018,
+    0.0018
+   ],
+   "Back_Book_04": [
+    0.0184,
+    0.0185
+   ],
+   "Back_Book_05": [
+    0.0003,
+    0.0
+   ],
+   "Back_Book_06": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_07": [
+    0.0021,
+    0.0021
+   ],
+   "Back_Book_08": [
+    0.0008,
+    0.0008
+   ],
+   "Back_Book_09": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_10": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_11": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_12": [
+    0.0071,
+    0.0071
+   ],
+   "Back_Book_13": [
+    0.0073,
+    0.0073
+   ],
+   "Back_Book_14": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_15": [
+    0.0005,
+    0.0005
+   ],
+   "Back_Book_16": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_17": [
+    0.0019,
+    0.002
+   ],
+   "Back_Book_18": [
+    0.002,
+    0.002
+   ],
+   "Back_Book_19": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_20": [
+    0.0005,
+    0.0004
+   ],
+   "Back_Book_21": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_22": [
+    0.0018,
+    0.0019
+   ],
+   "Back_Book_23": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_24": [
+    0.005,
+    0.005
+   ],
+   "Back_Book_25": [
+    0.0048,
+    0.0048
+   ],
+   "Back_Book_26": [
+    0.0001,
+    0.0001
+   ],
+   "Back_Book_27": [
+    0.0001,
+    0.0001
+   ],
+   "Back_Book_28": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_29": [
+    0.0081,
+    0.0081
+   ],
+   "Back_Book_30": [
+    0.0083,
+    0.0083
+   ],
+   "Back_Book_31": [
+    0.0002,
+    0.0
+   ],
+   "Back_Book_32": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_33": [
+    0.0027,
+    0.0027
+   ],
+   "Back_Book_34": [
+    0.0026,
+    0.0026
+   ],
+   "Back_Book_35": [
+    0.0055,
+    0.0055
+   ],
+   "Back_Book_36": [
+    0.0001,
+    0.0
+   ],
+   "Back_Book_37": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_38": [
+    0.0127,
+    0.0127
+   ],
+   "Back_Book_39": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_40": [
+    0.002,
+    0.002
+   ],
+   "Back_Book_41": [
+    0.0005,
+    0.0005
+   ],
+   "Back_Book_42": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_43": [
+    0.0054,
+    0.0054
+   ],
+   "Back_Book_44": [
+    0.0055,
+    0.0055
+   ],
+   "Back_Book_45": [
+    0.0006,
+    0.0006
+   ],
+   "Back_Book_46": [
+    0.0003,
+    0.0003
+   ],
+   "Back_Book_47": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_48": [
+    0.0001,
+    0.0001
+   ],
+   "Back_Book_49": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_50": [
+    0.0004,
+    0.0005
+   ],
+   "Back_Book_51": [
+    0.0003,
+    0.0003
+   ],
+   "Back_Book_52": [
+    0.0,
+    0.0
+   ],
+   "Back_Book_53": [
+    0.1698,
+    0.1794
+   ],
+   "Back_Book_54": [
+    0.3807,
+    0.3807
+   ],
+   "Back_Bookcase": [
+    0.0218,
+    0.1225
+   ],
+   "Back_Chart": [
+    0.2517,
+    0.2517
+   ],
+   "Back_Door": [
+    0.1144,
+    0.1913
+   ],
+   "Back_DoorFrame": [
+    0.0003,
+    0.0
+   ],
+   "Back_Frame": [
+    0.1388,
+    0.3523
+   ],
+   "Back_Hooks": [
+    0.3277,
+    0.3795
+   ],
+   "Back_Scarf": [
+    0.172,
+    0.3466
+   ],
+   "Console_Binnacle": [
+    1.0173,
+    4.9195
+   ],
+   "Console_Cabinet_L": [
+    0.0369,
+    0.058
+   ],
+   "Console_Cabinet_R": [
+    0.0737,
+    0.1636
+   ],
+   "Console_Deck": [
+    0.0217,
+    0.0477
+   ],
+   "Console_Desk": [
+    0.0924,
+    0.1997
+   ],
+   "Console_Drawer_L1": [
+    0.0591,
+    0.0918
+   ],
+   "Console_Drawer_L2": [
+    0.2199,
+    0.2113
+   ],
+   "Console_Drawer_R1": [
+    0.0782,
+    0.1003
+   ],
+   "Console_Drawer_R2": [
+    0.2175,
+    0.1661
+   ],
+   "Console_KneeWell": [
+    0.1612,
+    0.231
+   ],
+   "Console_Pad": [
+    0.2086,
+    0.5086
+   ],
+   "Deck_Book_1": [
+    0.0458,
+    0.0529
+   ],
+   "Deck_Book_2": [
+    0.0046,
+    0.0393
+   ],
+   "Door_Wheel": [
+    0.0,
+    0.0
+   ],
+   "Door_WindowFrame": [
+    0.0,
+    0.0
+   ],
+   "Fairy_Battery": [
+    0.0,
+    0.0
+   ],
+   "Fairy_Clips": [
+    0.0,
+    0.0
+   ],
+   "Fairy_Wire": [
+    0.0021,
+    0.0021
+   ],
+   "Frame_Arch_1": [
+    0.001,
+    0.0
+   ],
+   "Frame_Arch_2": [
+    0.0003,
+    0.0
+   ],
+   "Frame_Junction": [
+    0.0595,
+    0.1232
+   ],
+   "Frame_Mullion_1": [
+    0.0001,
+    0.0
+   ],
+   "Frame_Mullion_2": [
+    0.0002,
+    0.0
+   ],
+   "Frame_Mullion_3": [
+    0.0001,
+    0.0
+   ],
+   "Frame_Mullion_4": [
+    0.0,
+    0.0
+   ],
+   "Frame_Mullion_5": [
+    0.0002,
+    0.0
+   ],
+   "Frame_Sill": [
+    0.0369,
+    0.0841
+   ],
+   "Galley_Board": [
+    1.1074,
+    1.3977
+   ],
+   "Galley_Cabinet": [
+    0.025,
+    0.0455
+   ],
+   "Galley_Door_1": [
+    0.0272,
+    0.0317
+   ],
+   "Galley_Door_2": [
+    0.0296,
+    0.0437
+   ],
+   "Galley_Door_3": [
+    0.0291,
+    0.0456
+   ],
+   "Galley_Drawer_1": [
+    0.0306,
+    0.0385
+   ],
+   "Galley_Drawer_2": [
+    0.025,
+    0.0375
+   ],
+   "Galley_Drawer_3": [
+    0.0401,
+    0.0458
+   ],
+   "Galley_Jar_1": [
+    0.0067,
+    0.007
+   ],
+   "Galley_Jar_2": [
+    0.0,
+    0.0
+   ],
+   "Galley_Jar_3": [
+    0.0021,
+    0.0027
+   ],
+   "Galley_Kettle": [
+    0.3886,
+    1.0231
+   ],
+   "Galley_Mug_1": [
+    0.353,
+    0.353
+   ],
+   "Galley_Mug_2": [
+    0.7381,
+    0.7381
+   ],
+   "Galley_MugTree": [
+    0.7409,
+    0.7409
+   ],
+   "Galley_Shelf": [
+    0.1089,
+    0.1624
+   ],
+   "Galley_Tin_1": [
+    0.2109,
+    0.7097
+   ],
+   "Galley_Tin_2": [
+    0.0322,
+    0.0426
+   ],
+   "Galley_Tin_3": [
+    0.0795,
+    0.0848
+   ],
+   "Galley_Top": [
+    0.3627,
+    0.594
+   ],
+   "Gauge_1": [
+    0.0141,
+    0.0009
+   ],
+   "Gauge_1_Face": [
+    0.0834,
+    0.0834
+   ],
+   "Gauge_1_Needle": [
+    0.0352,
+    0.082
+   ],
+   "Gauge_2": [
+    0.0085,
+    0.0253
+   ],
+   "Gauge_2_Face": [
+    0.0,
+    0.0
+   ],
+   "Gauge_2_Needle": [
+    0.0057,
+    0.0099
+   ],
+   "Hanger_Cords": [
+    0.0199,
+    0.0199
+   ],
+   "Hanger_Hook": [
+    0.0203,
+    0.0203
+   ],
+   "Lamp_Desk": [
+    0.0535,
+    0.1249
+   ],
+   "Lamp_DeskShade": [
+    0.047,
+    0.0955
+   ],
+   "Lamp_Harp": [
+    0.0205,
+    0.0205
+   ],
+   "Logbook": [
+    0.2533,
+    0.3993
+   ],
+   "Mug": [
+    0.1732,
+    0.5292
+   ],
+   "Mug_Tea": [
+    0.0996,
+    0.0996
+   ],
+   "Nook_BackCushion": [
+    0.0731,
+    0.0972
+   ],
+   "Nook_Bench": [
+    0.0596,
+    0.1205
+   ],
+   "Nook_Blanket": [
+    0.0523,
+    0.1101
+   ],
+   "Nook_Book": [
+    0.1,
+    0.1
+   ],
+   "Nook_Cushion": [
+    0.0393,
+    0.0965
+   ],
+   "Nook_Pillow_1": [
+    0.0763,
+    0.1064
+   ],
+   "Nook_Pillow_2": [
+    0.069,
+    0.0976
+   ],
+   "Orrery_Arm_1": [
+    0.1001,
+    0.1001
+   ],
+   "Orrery_Arm_2": [
+    0.0239,
+    0.0318
+   ],
+   "Orrery_Arm_3": [
+    0.0,
+    0.0
+   ],
+   "Orrery_Arm_4": [
+    0.0,
+    0.0
+   ],
+   "Orrery_Arm_5": [
+    0.0842,
+    0.3609
+   ],
+   "Orrery_Base": [
+    0.1107,
+    0.3504
+   ],
+   "Pencil": [
+    0.0459,
+    0.0001
+   ],
+   "Pendant_Cap": [
+    0.0032,
+    0.0032
+   ],
+   "Pendant_Cord": [
+    0.0104,
+    0.0104
+   ],
+   "Pendant_Rose": [
+    0.0104,
+    0.0104
+   ],
+   "Pendant_Shade": [
+    0.0188,
+    0.0275
+   ],
+   "Plant_Bookcase_Leaves": [
+    0.0102,
+    0.0198
+   ],
+   "Plant_Bookcase_Pot": [
+    0.0303,
+    0.0725
+   ],
+   "Plant_Bookcase_Soil": [
+    0.0103,
+    0.0103
+   ],
+   "Plant_DeckL_Leaves": [
+    0.0201,
+    0.0477
+   ],
+   "Plant_DeckL_Pot": [
+    0.0441,
+    0.1085
+   ],
+   "Plant_DeckL_Soil": [
+    0.0041,
+    0.0052
+   ],
+   "Plant_DeckR_Leaves": [
+    0.0162,
+    0.0406
+   ],
+   "Plant_DeckR_Pot": [
+    0.0744,
+    0.0752
+   ],
+   "Plant_DeckR_Soil": [
+    0.0115,
+    0.0223
+   ],
+   "Plant_Hanging_Leaves": [
+    0.0103,
+    0.0248
+   ],
+   "Plant_Hanging_Pot": [
+    0.0279,
+    0.0572
+   ],
+   "Plant_Herb_1_Leaves": [
+    0.3141,
+    0.8335
+   ],
+   "Plant_Herb_1_Pot": [
+    0.2085,
+    0.2995
+   ],
+   "Plant_Herb_1_Soil": [
+    0.0,
+    0.0
+   ],
+   "Plant_Herb_2_Leaves": [
+    0.3579,
+    0.7947
+   ],
+   "Plant_Herb_2_Pot": [
+    0.2192,
+    0.4004
+   ],
+   "Plant_Herb_2_Soil": [
+    0.0,
+    0.0
+   ],
+   "Porthole_Port_Frame": [
+    0.0,
+    0.0
+   ],
+   "Porthole_Stbd_Frame": [
+    0.0016,
+    0.0
+   ],
+   "Radio_Aerial": [
+    0.021,
+    0.021
+   ],
+   "Radio_Body": [
+    0.0766,
+    0.2173
+   ],
+   "Radio_DialBezel": [
+    0.0165,
+    0.1135
+   ],
+   "Radio_Feet": [
+    0.0658,
+    0.0658
+   ],
+   "Radio_Grille": [
+    0.0198,
+    0.0515
+   ],
+   "Radio_Knob_Tune": [
+    0.0029,
+    0.0
+   ],
+   "Radio_Knob_Volume": [
+    0.0,
+    0.0
+   ],
+   "Radio_Strap": [
+    0.042,
+    0.0764
+   ],
+   "Rug": [
+    0.1955,
+    0.2848
+   ],
+   "Sconce": [
+    0.0158,
+    0.0158
+   ],
+   "Sconce_Shade": [
+    0.0325,
+    0.0325
+   ],
+   "Screen_C_Bezel": [
+    0.0002,
+    0.0002
+   ],
+   "Screen_L_Bezel": [
+    0.0,
+    0.0002
+   ],
+   "Screen_R_Bezel": [
+    0.0001,
+    0.0002
+   ],
+   "Seat_Arm_L": [
+    0.0257,
+    0.1818
+   ],
+   "Seat_Arm_R": [
+    0.1319,
+    0.2077
+   ],
+   "Seat_Back": [
+    0.1485,
+    0.2005
+   ],
+   "Seat_Blanket": [
+    0.079,
+    0.1382
+   ],
+   "Seat_Cushion": [
+    0.0974,
+    0.2349
+   ],
+   "Seat_Pedestal": [
+    0.0,
+    0.0
+   ],
+   "Seat_Shell": [
+    0.0966,
+    0.1437
+   ],
+   "Seat_Side_L": [
+    0.024,
+    0.0393
+   ],
+   "Seat_Side_R": [
+    0.0934,
+    0.1646
+   ],
+   "Seat_Tray": [
+    0.0356,
+    0.1291
+   ],
+   "Shell_Back": [
+    0.072,
+    0.2434
+   ],
+   "Shell_Floor": [
+    0.0357,
+    0.103
+   ],
+   "Shell_Lining": [
+    0.096,
+    0.2302
+   ],
+   "Shell_Lower_L": [
+    0.045,
+    0.068
+   ],
+   "Shell_Lower_R": [
+    0.0729,
+    0.1178
+   ],
+   "Shell_PortholePanel_Port": [
+    0.0538,
+    0.082
+   ],
+   "Shell_PortholePanel_Stbd": [
+    0.7841,
+    1.2824
+   ],
+   "StarJar_Lid": [
+    0.0032,
+    0.0032
+   ],
+   "StarJar_Wire": [
+    0.0032,
+    0.0032
+   ],
+   "Switch_1": [
+    0.0042,
+    0.0042
+   ],
+   "Switch_2": [
+    0.0107,
+    0.0107
+   ],
+   "Switch_3": [
+    0.0215,
+    0.0215
+   ],
+   "Switch_4": [
+    0.0208,
+    0.0208
+   ],
+   "Switch_Plate": [
+    0.0026,
+    0.0
+   ],
+   "Telescope": [
+    0.0,
+    0.0
+   ],
+   "Telescope_Mount": [
+    0.0196,
+    0.0219
+   ],
+   "Throttle_Base": [
+    0.0094,
+    0.0003
+   ],
+   "Throttle_Lever": [
+    0.0727,
+    0.133
+   ],
+   "Trim_Dado_L": [
+    0.0322,
+    0.0758
+   ],
+   "Trim_Dado_R1": [
+    0.2605,
+    0.4286
+   ],
+   "Trim_Dado_R2": [
+    0.2088,
+    0.4723
+   ]
+  }
+ },
+ "uv": {
+  "visible_m2": 60.21,
+  "coverage": 0.495,
+  "px_per_m": 92.9
+ },
+ "bake": {
+  "coverage_mask": 0.48844146728515625,
+  "albedo_p50": 0.10833947360515594
+ },
+ "tex": 1024
+}

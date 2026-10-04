@@ -42,6 +42,25 @@ A cozy spaceship cabin (built in Blender, lighting baked) drifting through a pro
   supports, checks that are proven able to fail, `--python-exit-code 1`, export uncompressed for the audit and
   compress only in a separate web step.
 
+## Cabin pipeline (`blender/`)
+
+    B="blender -b --factory-startup --python-exit-code 1 -P"
+    $B blender/build_cabin.py  -- --out blender/out/cabin_geo.blend --report blender/out/build.json
+    $B blender/cabin_checks.py -- --blend blender/out/cabin_geo.blend --selftest
+    $B blender/bake_cabin.py   -- --blend blender/out/cabin_geo.blend --out public/assets/cabin --tex 2048 --lm 1024
+    $B blender/render_views.py -- --blend blender/out/cabin_geo.blend --out shots/clay/c --engine CYCLES --samples 12
+
+- `cabin_layout.py` holds every dimension (one source); `build_props.py` the furniture and props; `build_cabin.py`
+  the shell, canopy and console and the list of areas; `meshkit.py` the closed-solid builders.
+- `cabin_look.py`: Cycles materials per face zone, and the practical lights (`LIGHTS`). Light powers are solved
+  from the per-object irradiance report `bake_cabin.py` prints after each lightmap bake, not guessed.
+- `cabin_checks.py` gates every build: closed solids, attachment (contact graph to the hull), containment in the
+  hull, clearances, sweeps of every moving part, the pilot's eye. `--selftest` breaks the cabin on purpose and
+  requires each break to be caught. Run it after any geometry change.
+- The game reads `public/assets/cabin/cabin.json`: textures, lightmap encoding, emitters per node, pivots, radio
+  position. Node names are an API: `Screen_L/C/R`, `Radio_Dial`, `Radio_Knob_*`, `Orrery_Arm_*` (extras
+  `rest_angle`), `Switch_1..4`, `Throttle_Lever`, `Gauge_*_Needle`, `Spot_*` markers.
+
 ## Budgets
 
 60 fps on a mid-range laptop at 1080p on the High preset; Low must run on integrated GPUs and phones.

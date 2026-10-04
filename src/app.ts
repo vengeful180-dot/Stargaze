@@ -16,6 +16,9 @@ import { Ship } from './ship/ship';
 import { CameraRig, PILOT_SPOT } from './ship/cameraRig';
 import { Flight } from './ship/flight';
 import { makePlaceholderCabin } from './cabin/placeholder';
+import { Cabin } from './cabin/cabin';
+import { Screen, drawDial, drawNav, drawRadio, drawShip, type ScreenData } from './cabin/screens';
+import { AudioSystem, makeStations, type RadioBand, type RadioInfo, type SfxName } from './audio';
 import { Hud, type TargetInfo } from './ui/hud';
 import { GalaxyMap } from './ui/galaxyMap';
 
@@ -53,6 +56,18 @@ export class App {
   flight = new Flight();
   dust = new SpeedDust();
   cabin: THREE.Group;
+  cabinModel = new Cabin();
+  screens = new Map<string, Screen>();
+  private screenTimer = 0;
+  /** the cabin radio, ambience and sound effects (no AudioContext until the player boards) */
+  audio = AudioSystem.create();
+  private radioInfo: RadioInfo | null = null;
+  private spectrum = new Uint8Array(64);
+  private shipInv = new THREE.Matrix4();
+  private camLocal = new THREE.Matrix4();
+  /** props that move when clicked: rest pose, current and target angle about their pivot axis */
+  private movers = new Map<string, { node: THREE.Object3D; rest: THREE.Quaternion; axis: THREE.Vector3; angle: number; target: number }>();
+  private tapeInput: HTMLInputElement | null = null;
   hud!: Hud;
   map!: GalaxyMap;
   sun = new THREE.DirectionalLight(0xffffff, 3);
@@ -86,7 +101,26 @@ export class App {
     this.input = new Input(this.canvas);
     this.scene.add(this.ship.group);
     this.ship.group.add(this.rig.root);
-    if (!params.has('nocabin')) this.ship.group.add(this.cabin);
+    if (!params.has('nocabin')) {
+      if (params.has('placeholder')) this.ship.group.add(this.cabin);
+      else {
+        await this.cabinModel.load(params.get('cabin') ?? 'assets/cabin', this.renderer.gl);
+        this.cabinModel.applyEnv();
+        this.ship.group.add(this.cabinModel.root);
+        for (const [name, draw, w, h] of [['Screen_L', drawShip, 640, 320], ['Screen_C', drawNav, 640, 320],
+          ['Screen_R', drawRadio, 640, 320], ['Radio_Dial', drawDial, 256, 110]] as const) {
+          const mesh = this.cabinModel.screens.get(name);
+          if (!mesh) continue;
+          const sc = new Screen(name, draw, w, h);
+          mesh.material = sc.material;
+          this.screens.set(name, sc);
+        }
+        for (const [name, ax] of Object.entries(this.cabinModel.manifest?.pivots ?? {})) {
+          const node = this.cabinModel.nodes.get(name);
+          if (node) this.movers.set(name, { node, rest: node.quaternion.clone(), axis: ax === 'x' ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0), angle: 0, target: 0 });
+        }
+      }
+    }
     this.scene.add(this.stars.points);
     this.scene.add(this.dust.lines);
     this.scene.add(this.sun, this.sun.target, this.ambient);
@@ -99,6 +133,15 @@ export class App {
     sc.far = 14;
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.02;
+
+    // the music comes from the radio on the desk (ship-local metres: +Y up, forward -Z)
+    const rp = this.cabinModel.manifest?.radio;
+    this.audio.radio.setPosition(rp?.pos ?? [0.72, 0.84, -0.35], rp?.facing ?? [-0.9, 0, 0.44]);
+    this.audio.setVolumes({ master: this.settings.master, music: this.settings.music, ambience: this.settings.ambience, sfx: this.settings.sfx });
+    this.audio.radio.setCharacter(this.settings.radioCharacter);
+    this.audio.radio.onInfo((i) => {
+      this.radioInfo = i;
+    });
 
     this.hud = new Hud(this.ui);
     this.hud.onBoard = () => this.board();
@@ -146,6 +189,7 @@ export class App {
     }
     if (params.has('nosys')) this.systemView!.root.visible = false;
     if (params.has('map')) this.map.show();
+    if (params.has('yaw') || params.has('pitch')) this.rig.setView(Number(params.get('yaw') ?? 0), Number(params.get('pitch') ?? -4));
 
     window.addEventListener('resize', () => this.resize());
     this.resize();
@@ -169,6 +213,20 @@ export class App {
 
   board() {
     this.hud.toast(`${nameOf(this.systemRef)} system`);
+    this.audio.unlock().then(
+      () => this.sfx('seat'),
+      () => this.hud.toast('No sound: this browser has no Web Audio'),
+    );
+  }
+
+  sfx(name: SfxName, node?: string) {
+    const o = node ? this.cabinModel.nodes.get(node) : undefined;
+    let pos: [number, number, number] | undefined;
+    if (o) {
+      const v = o.getWorldPosition(new THREE.Vector3()).applyMatrix4(this.shipInv.copy(this.ship.group.matrixWorld).invert());
+      pos = [v.x, v.y, v.z];
+    }
+    this.audio.sfx.play(name, pos);
   }
 
   enterSystem(ref: SystemRef) {
@@ -179,6 +237,8 @@ export class App {
     this.systemView = new SystemView(this.system, this.baker, this.quality);
     this.scene.add(this.systemView.root);
     this.stars.build(this.galaxy, ref.pos, ref, this.quality.stars);
+    // every system has its own handful of stations; arriving retunes through static
+    this.audio.radio.setStations(makeStations(((this.galaxy.seed * 31) ^ ref.id) >>> 0));
     this.stars.buildBackground(this.galaxy.seed, this.quality.stars * 3, ref.pos);
     const neb = nebulaeNear(this.galaxy.seed, ref.pos);
     const old = this.skyTarget;
@@ -249,6 +309,22 @@ export class App {
     this.hud.noteInteraction();
     const ray = new THREE.Raycaster();
     ray.setFromCamera(new THREE.Vector2(x, y), this.camera);
+    // cabin first: screens and props; a click on the cabin never selects a planet behind it
+    if (this.cabinModel.loaded) {
+      const hits = ray.intersectObject(this.cabinModel.root, true);
+      const h = hits.find((h) => (h.object as THREE.Mesh).isMesh && !this.cabinModel.glass.includes(h.object as THREE.Mesh));
+      if (h) {
+        const sc = this.screens.get(h.object.name);
+        if (sc && h.uv) {
+          const id = sc.hit(h.uv.x, h.uv.y);
+          if (id) {
+            this.sfx('button', h.object.name);
+            this.onScreenButton(id);
+          }
+        } else this.onProp(h.object.name);
+        return;
+      }
+    }
     const body = this.systemView?.pick(ray.ray.origin, ray.ray.direction, this.ship.pos, 0.014);
     let next: Selection = null;
     if (body) next = { kind: 'body', body };
@@ -265,6 +341,133 @@ export class App {
       return;
     }
     this.select(next);
+  }
+
+  onScreenButton(id: string) {
+    const lv = this.cabinModel.levels;
+    const step = 0.15;
+    switch (id) {
+      case 'lamps-': this.cabinModel.setLevels({ lamps: Math.max(0, lv.lamps - step) }); break;
+      case 'lamps+': this.cabinModel.setLevels({ lamps: Math.min(1.5, lv.lamps + step) }); break;
+      case 'glow-': this.cabinModel.setLevels({ console: Math.max(0, lv.console - step) }); break;
+      case 'glow+': this.cabinModel.setLevels({ console: Math.min(1.5, lv.console + step) }); break;
+      case 'night': this.cabinModel.setLevels({ lamps: 0.2, console: 0.6 }); break;
+      case 'cozy': this.cabinModel.setLevels({ lamps: 1, console: 1 }); break;
+      case 'bright': this.cabinModel.setLevels({ lamps: 1.4, console: 1.2 }); break;
+      case 'map': this.toggleMap(); break;
+      case 'go': this.engageSelection(); break;
+      case 'stop': this.flight.stop(); break;
+      case 'power': this.audio.radio.setPower(!(this.radioInfo?.on ?? this.audio.radio.on)); break;
+      case 'next': this.audio.radio.nextStation(); break;
+      case 'prev': this.audio.radio.prevStation(); break;
+      case 'band': this.cycleBand(); break;
+    }
+    this.screenTimer = 0;
+  }
+
+  /** stations -> your own files (tape) -> a stream link -> stations */
+  private cycleBand() {
+    const r = this.audio.radio;
+    const next: RadioBand = r.band === 'stations' ? 'tape' : r.band === 'tape' ? 'link' : 'stations';
+    if (next === 'tape' && (this.radioInfo?.tapeCount ?? 0) === 0) {
+      if (!this.tapeInput) {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'audio/*';
+        inp.multiple = true;
+        inp.style.display = 'none';
+        inp.addEventListener('change', () => {
+          const files = [...(inp.files ?? [])];
+          if (files.length) {
+            r.loadTape(files);
+            r.setBand('tape');
+            this.hud.toast(`Tape: ${files.length} track${files.length > 1 ? 's' : ''}`);
+          }
+          inp.value = '';
+        });
+        document.body.appendChild(inp);
+        this.tapeInput = inp;
+      }
+      this.tapeInput.click();
+      return;
+    }
+    if (next === 'link') {
+      const url = window.prompt('Play a stream or audio file link on the radio (https://...):', '');
+      if (url) {
+        r.setBand('link');
+        r.playLink(url).then((res) => {
+          if (res === 'no-cors') this.hud.toast('Playing (the site blocks the radio effect, so it sounds clean)');
+          else if (res === 'error') this.hud.toast('Could not play that link');
+        });
+        return;
+      }
+      r.setBand('stations');
+      return;
+    }
+    r.setBand(next);
+  }
+
+  /** clicks on the cabin's props: radio knobs, toggle switches */
+  private onProp(name: string) {
+    const turn = (id: string, by: number, abs = false) => {
+      const m = this.movers.get(id);
+      if (m) m.target = abs ? by : m.target + by;
+    };
+    if (name === 'Radio_Knob_Tune') {
+      this.audio.radio.nextStation();
+      turn(name, 0.9);
+      this.sfx('knob', name);
+    } else if (name === 'Radio_Knob_Volume') {
+      const on = !(this.radioInfo?.on ?? this.audio.radio.on);
+      this.audio.radio.setPower(on);
+      turn(name, on ? 2.2 : 0, true);
+      this.sfx('knob', name);
+    } else if (/^Switch_[1-4]$/.test(name)) {
+      const m = this.movers.get(name);
+      const up = !m || m.target <= 0;
+      turn(name, up ? 0.45 : -0.45, true);
+      this.sfx('switch', name);
+      const lv = this.cabinModel.levels;
+      if (name === 'Switch_1') this.cabinModel.setLevels({ lamps: up ? 0.15 : 1 });
+      else if (name === 'Switch_2') this.cabinModel.setLevels({ console: up ? 0.25 : 1 });
+      else if (name === 'Switch_3') this.cabinModel.setLevels({ lamps: Math.min(1.5, lv.lamps + (up ? 0.35 : -0.35)) });
+      else this.audio.radio.setPower(!(this.radioInfo?.on ?? this.audio.radio.on));
+    }
+  }
+
+  private screenData(): ScreenData {
+    const sv = this.systemView!;
+    const t = this.targetInfo();
+    const star = this.system.star;
+    const n = new THREE.Vector3(...this.system.ecliptic);
+    const ref = Math.abs(n.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const ax = new THREE.Vector3().crossVectors(n, ref).normalize();
+    const ay = new THREE.Vector3().crossVectors(n, ax);
+    const sel = this.selection?.kind === 'body' ? this.selection.body.id : this.flight.target?.id;
+    const near = this.flight.park?.body.id;
+    const planets = this.system.planets.map((p) => {
+      const pos = sv.bodyPos(p.id)!;
+      return { name: p.name, orbit: p.orbit!.radius, angle: Math.atan2(pos.dot(ay), pos.dot(ax)), ringed: !!p.rings,
+        selected: sel === p.id || p.moons.some((m) => m.id === sel), here: near === p.id || p.moons.some((m) => m.id === near) };
+    });
+    const ri = this.radioInfo ?? this.audio.radio.getInfo();
+    this.audio.radio.getSpectrum(this.spectrum);
+    const levels = new Array(24).fill(0).map((_, i) => {
+      const k = Math.floor(2 + Math.pow(i / 24, 1.6) * 44);
+      return this.spectrum[k] / 255;
+    });
+    const station = ri.band === 'tape' ? 'Your tape' : ri.band === 'link' ? (ri.station ?? 'Link') : (ri.station ?? (ri.status === 'static' ? '· · · static · · ·' : '—'));
+    return {
+      system: star.name, starClass: this.systemRef.cls === 'RG' ? 'RED GIANT' : this.systemRef.cls === 'D' ? 'WHITE DWARF' : `${this.systemRef.cls}-TYPE`,
+      target: t?.name ?? null, targetKind: t?.kind ?? '', distance: t?.distance ?? 0, eta: t?.eta ?? Infinity,
+      speed: this.flight.speed, mode: this.warp ? 'warp' : this.flight.mode, planets,
+      lamps: this.cabinModel.levels.lamps, console: this.cabinModel.levels.console,
+      radio: {
+        on: ri.on, band: ri.band, station, freq: ri.band === 'stations' ? `${ri.freq.toFixed(1)} MHz` : ri.band.toUpperCase(),
+        freqMHz: ri.freq, title: ri.title ?? (ri.status === 'loading' ? 'loading…' : ''), levels, signal: ri.signal, status: ri.status,
+      },
+      catalogued: this.visited.size, clock: new Date(),
+    };
   }
 
   private sameSelection(a: Selection, b: Selection): boolean {
@@ -316,10 +519,12 @@ export class App {
         break;
       }
       case 'spool':
+        if (w.t === dt) this.sfx('warp-spool');
         fx.amount = 0.3 * smoothstep(0, 2.6, w.t);
         if (w.t > 2.6) {
           w.phase = 'jump';
           w.t = 0;
+          this.sfx('warp-jump');
           this.arriveIn(w.target, w.dir);
         }
         break;
@@ -328,6 +533,7 @@ export class App {
         if (w.t > 4 && w.skyReady && !this.baker.busy) {
           w.phase = 'exit';
           w.t = 0;
+          this.sfx('warp-exit');
         }
         break;
       case 'exit':
@@ -434,11 +640,36 @@ export class App {
     this.sun.target.position.set(0, 0, 0);
     this.dust.update(this.ship.pos, this.ship.vel, sv.asteroids.inField, this.sunRad);
 
+    // the listener is the camera, in the ship's own frame (the radio and the cabin's sounds live there)
+    this.camera.updateMatrixWorld();
+    this.camLocal.multiplyMatrices(this.shipInv.copy(this.ship.group.matrixWorld).invert(), this.camera.matrixWorld);
+    const e = this.camLocal.elements;
+    this.audio.setListener([e[12], e[13], e[14]], [-e[8], -e[9], -e[10]], [e[4], e[5], e[6]]);
+    this.audio.ambience.setShipState({
+      throttle: this.flight.throttle,
+      speed: Math.min(1, Math.log10(1 + this.flight.speed) / 9.5),
+      warp: this.renderer.warp.amount,
+    });
+    for (const m of this.movers.values()) {
+      if (Math.abs(m.target - m.angle) < 1e-4) continue;
+      m.angle = damp(m.angle, m.target, 14, dt);
+      m.node.quaternion.copy(m.rest).multiply(new THREE.Quaternion().setFromAxisAngle(m.axis, m.angle));
+    }
+
     this.hud.update(dt);
     this.hud.setTarget(this.hud.boarded && !this.warp ? this.targetInfo() : null);
     const mode = this.warp ? 'warp' : this.flight.mode === 'autopilot' ? 'autopilot' : this.flight.mode === 'parked' ? 'orbiting' : this.flight.speed > 0.5 ? 'manual' : 'drifting';
     this.hud.setSpeed(this.flight.speed, mode);
 
+    if (this.screens.size) {
+      this.screenTimer -= dt;
+      if (this.screenTimer <= 0) {
+        this.screenTimer = 0.1;
+        const d = this.screenData();
+        for (const sc of this.screens.values()) sc.render(d);
+      }
+      for (const sc of this.screens.values()) sc.material.uniforms.uTime.value = this.time;
+    }
     if (params.has('warpfx')) this.renderer.warp.amount = Number(params.get('warpfx'));
     this.baker.update(TEST ? 1e9 : this.warp?.phase === 'jump' ? 12 : 3);
     this.renderer.render(dt);
