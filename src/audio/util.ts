@@ -109,6 +109,8 @@ export class NodeStats {
   voicesMax = 0;
   voicesCreated = 0;
   voicesStolen = 0;
+  /** most simultaneous (counted) synth voices seen at allocation time */
+  synthMax = 0;
   bandsLive = 0;
   addNodes(n: number) {
     this.nodesLive += n;
@@ -135,6 +137,7 @@ export class NodeStats {
       voicesMax: this.voicesMax,
       voicesCreated: this.voicesCreated,
       voicesStolen: this.voicesStolen,
+      synthMax: this.synthMax,
       bandsLive: this.bandsLive,
     };
   }
