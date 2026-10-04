@@ -114,7 +114,7 @@ export interface Score {
 }
 
 /** Silence between tracks on a station (crackle keeps running). */
-export const TRACK_GAP = 2.5;
+export const TRACK_GAP = 1.0;
 
 const KEY_WEIGHTS: readonly (readonly [number, number])[] = [
   [0, 1.1], [1, 1.0], [2, 1.0], [3, 1.3], [4, 0.8], [5, 1.3], [6, 0.5], [7, 1.0], [8, 1.2], [9, 1.0], [10, 1.2], [11, 0.6],
@@ -136,7 +136,7 @@ const DRIFT_FORMS: readonly (readonly SectionPlan[])[] = [
   [S('intro', 4), S('A', 8), S('B', 8), S('break', 8), S('B2', 8), S('outro', 8)],
 ];
 
-const TAIL = 2.0;
+const TAIL = 1.6;
 
 /** Cheap: tempo, key, form and instrumentation for a track (no notes). */
 export function planTrack(stationSeed: number, style: StationStyle, index: number): TrackPlan {

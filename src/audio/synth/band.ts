@@ -186,7 +186,9 @@ export class Band {
     this.duck = g(1);
     this.duck.connect(sum);
     const subShelf = filt('lowshelf', 75, 0.7, -3);
-    sum.connect(subShelf).connect(this.secFilter).connect(tape).connect(this.mix).connect(this.out);
+    // a gentle presence lift fills the 2 kHz hole between dark keys and dusty hats
+    const presence = filt('peaking', 1800, 0.8, 2);
+    sum.connect(subShelf).connect(presence).connect(this.secFilter).connect(tape).connect(this.mix).connect(this.out);
     this.mixParams.push(this.mix.gain);
     this.outParams.push(this.out.gain);
     this.filterParams.push(this.secFilter.frequency);
@@ -338,7 +340,7 @@ export class Band {
     {
       const inp = g(1);
       const hp = filt('highpass', 30, 0.7);
-      const lp = filt('lowpass', this.plan.drums === 'crisp' ? 8000 : this.rng.range(6000, 7200), 0.6);
+      const lp = filt('lowpass', this.plan.drums === 'crisp' ? 8000 : this.rng.range(5800, 6800), 0.6);
       const sat = shaper(warmCurve(1.3, 0.05));
       inp.connect(hp).connect(lp).connect(sat).connect(sum);
       // only the snare/rim region goes to the plate (keeps the kick dry)
@@ -384,6 +386,13 @@ export class Band {
     for (const s of this.loops) {
       if (s instanceof AudioBufferSourceNode && s.buffer && s.loop) s.start(at, this.rng.range(0, s.buffer.duration));
       else s.start(at);
+    }
+    if (this.t0 >= now - 0.05) {
+      // a fresh track comes up like a fader being raised
+      for (const p of this.outParams) {
+        p.setValueAtTime(0, at);
+        p.setTargetAtTime(1, at, 0.22);
+      }
     }
     if (this.t0 < now - 0.05) {
       // joining: bring FX state up to date and restart long notes that are still sounding
