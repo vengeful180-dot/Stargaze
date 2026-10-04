@@ -38,7 +38,7 @@ interface DialAnim {
 export const DIAL_MIN = 87.5;
 export const DIAL_MAX = 108.5;
 /** Output makeup so the radio sits near -18 LUFS at the default knob and listening position. */
-export const RADIO_GAIN = 1.57;
+export const RADIO_GAIN = 1.48;
 /** Level trim for the player's own (already mastered) music. */
 export const MEDIA_TRIM = 0.42;
 export const ROOM_SEND = 0.3;

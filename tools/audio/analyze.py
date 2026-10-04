@@ -139,7 +139,11 @@ def longest_silence(x, sr, thresh_db=-60.0):
 
 
 def clicks(x, sr):
-    """Isolated high-frequency bursts (discontinuities) that stick out of their surroundings."""
+    """High-frequency bursts that stick out of their surroundings.
+
+    Returns (impulsive, transients, max_jump). Impulsive events are discontinuities (a step or hard cut):
+    their >7 kHz energy collapses within ~1 ms. Transients (plucks, hats) keep ringing for several ms.
+    """
     m = x.mean(axis=1)
     sos = signal.butter(4, min(7000, sr * 0.4), 'highpass', fs=sr, output='sos')
     h = signal.sosfilt(sos, m)
@@ -149,8 +153,7 @@ def clicks(x, sr):
     edb = 20 * np.log10(e)
     med = median_filter(edb, size=81, mode='nearest')
     flag = (edb - med > 18) & (edb > -66)
-    # group neighbouring windows
-    events = []
+    imp, trans = [], []
     i = 0
     while i < n:
         if flag[i]:
@@ -158,12 +161,17 @@ def clicks(x, sr):
             while j + 1 < n and flag[j + 1]:
                 j += 1
             k = i + int(np.argmax(edb[i:j + 1] - med[i:j + 1]))
-            events.append((k * win / sr, float(edb[k] - med[k]), float(edb[k])))
+            s0 = k * win
+            peak = np.sqrt((h[s0:s0 + win] ** 2).mean() + 1e-20)
+            a, b = s0 + int(0.0015 * sr), s0 + int(0.004 * sr)
+            after = np.sqrt((h[a:b] ** 2).mean() + 1e-20) if b < len(h) else peak
+            ev = (k * win / sr, float(edb[k] - med[k]), float(edb[k]))
+            (imp if 20 * np.log10(after / peak) < -15 else trans).append(ev)
             i = j + 1
         else:
             i += 1
     d = np.abs(np.diff(m))
-    return events, float(d.max()) if len(d) else 0.0
+    return imp, trans, float(d.max()) if len(d) else 0.0
 
 
 def track_segments(log, total):
@@ -194,7 +202,9 @@ def analyse(path, skip=0.0, tracks=None):
     clip = int((np.abs(xs) >= 0.999).sum())
     dc = [round(float(v), 6) for v in xs.mean(axis=0)]
     spec, cen = spectral(xs, sr)
-    ev, maxjump = clicks(xs, sr)
+    ev, trans, maxjump = clicks(xs, sr)
+    ev = [(a + skip, b, c) for a, b, c in ev]
+    trans = [(a + skip, b, c) for a, b, c in trans]
     res = {
         'file': path,
         'seconds': round(len(x) / sr, 2),
@@ -213,6 +223,7 @@ def analyse(path, skip=0.0, tracks=None):
         'octaves_db': octave_bands(xs, sr),
         'clicks': len(ev),
         'worst_clicks': sorted(ev, key=lambda e: -e[1])[:5],
+        'transients': len(trans),
         'max_jump': round(maxjump, 4),
     }
     if tracks is not None:
@@ -295,7 +306,7 @@ def main(argv):
         print(f"  clipped {r['clipped']}  DC {r['dc']}  longest silence {r['longest_silence_s']}s  centroid {r['centroid_hz']} Hz  max jump {r['max_jump']}")
         print('  bands dB: ' + '  '.join(f"{k} {v}" for k, v in r['bands_db'].items()))
         print('  octaves:  ' + '  '.join(f"{k}:{v}" for k, v in r['octaves_db'].items()))
-        print(f"  clicks {r['clicks']}" + (f"  worst {[(round(a, 3), round(b, 1), round(c, 1)) for a, b, c in r['worst_clicks']]}" if r['clicks'] else ''))
+        print(f"  clicks (impulsive) {r['clicks']}  bright transients {r['transients']}" + (f"  worst {[(round(a, 3), round(b, 1), round(c, 1)) for a, b, c in r['worst_clicks']]}" if r['clicks'] else ''))
         if 'tracks' in r:
             for t in r['tracks']:
                 print(f"    track #{t['index']} {t['title']!r} {t['from']}-{t['to']}s  LUFS {t['lufs']}")

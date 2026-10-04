@@ -56,13 +56,13 @@ export const MIX = {
   rim: 0.28,
   snap: 0.28,
   brush: 0.46,
-  hat: 0.33,
-  ohat: 0.22,
+  hat: 0.28,
+  ohat: 0.19,
   shaker: 0.2,
   crackle: 0.045,
   hiss: 0.0045,
   riser: 0.045,
-  bandGain: 1,
+  bandGain: 1.1,
 };
 
 /** Per-style output trim so switching stations does not jump in loudness. */
@@ -173,12 +173,13 @@ export class Band {
     this.fixed.push(this.flutter);
     this.loops.push(this.flutter);
     const w = this.plan.tex.wow;
-    lfo(this.rng.range(0.45, 0.75), 6.5 * w, this.flutter.offset);
-    lfo(this.rng.range(0.11, 0.17), 4 * w, this.flutter.offset);
-    lfo(this.rng.range(5.5, 7.2), 1.4 * w, this.flutter.offset);
+    // wow (~0.5 Hz), slow drift and a little flutter: about +-6 cents typical, +-10 worst case
+    lfo(this.rng.range(0.45, 0.75), 4.2 * w, this.flutter.offset);
+    lfo(this.rng.range(0.11, 0.17), 2.4 * w, this.flutter.offset);
+    lfo(this.rng.range(5.5, 7.2), 0.9 * w, this.flutter.offset);
     // two slow incommensurate LFOs make the drift irregular
-    lfo(this.rng.range(0.06, 0.08), 3 * w, this.flutter.offset);
-    lfo(this.rng.range(0.26, 0.33), 2 * w, this.flutter.offset);
+    lfo(this.rng.range(0.06, 0.08), 1.8 * w, this.flutter.offset);
+    lfo(this.rng.range(0.26, 0.33), 1.2 * w, this.flutter.offset);
 
     // ---- instrument buses ----
     const used = new Set<string>();
@@ -242,8 +243,8 @@ export class Band {
     }
     if (used.has('pad')) {
       const inp = g(1);
-      const lp = filt('lowpass', this.rng.range(1300, 2000), 0.5);
-      lfo(0.06, 280, lp.frequency);
+      const lp = filt('lowpass', this.rng.range(1800, 2600), 0.5);
+      lfo(0.06, 350, lp.frequency);
       inp.connect(lp);
       toDuck(lp);
       this.bus.pad = inp;
@@ -277,7 +278,7 @@ export class Band {
     {
       const inp = g(1);
       const hp = filt('highpass', 30, 0.7);
-      const lp = filt('lowpass', this.plan.drums === 'crisp' ? 9000 : this.rng.range(7000, 8200), 0.6);
+      const lp = filt('lowpass', this.plan.drums === 'crisp' ? 8000 : this.rng.range(6000, 7200), 0.6);
       const sat = shaper(warmCurve(1.3, 0.05));
       inp.connect(hp).connect(lp).connect(sat).connect(sum);
       this.bus.drums = inp;
@@ -444,8 +445,8 @@ export class Band {
     const wurli = this.plan.wurli;
     const hiF = Math.min(1.25, Math.pow(261.6 / f, 0.3));
     const v2 = vel * vel;
-    const idx0 = (wurli ? 1.4 + 2.3 * v2 : 0.8 + 2.2 * v2) * hiF;
-    const idxS = (wurli ? 0.55 : 0.42) * hiF;
+    const idx0 = (wurli ? 1.5 + 2.2 * v2 : 0.95 + 2.0 * v2) * hiF;
+    const idxS = (wurli ? 0.75 : 0.68) * hiF;
     const tauI = (wurli ? 0.16 : 0.3) * Math.pow(261.6 / f, 0.25);
     const peak = MIX.ep * (0.22 + 0.78 * Math.pow(vel, 1.4));
     const tSlow = clamp(3.2 * Math.pow(261.6 / f, 0.55), 0.9, 5) * (wurli ? 0.55 : 1);

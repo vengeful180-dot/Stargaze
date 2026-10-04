@@ -41,7 +41,7 @@ export class Speaker {
   private vintage: GainNode;
   private ctx: BaseAudioContext;
   /** level match so the vintage path is about as loud as the clean one (measured, see tools/audio) */
-  static VINTAGE_MAKEUP = 0.56;
+  static VINTAGE_MAKEUP = 0.6;
   /** level into the valve stage */
   static DRIVE = 0.7;
 
@@ -70,18 +70,18 @@ export class Speaker {
     valve.oversample = '2x';
     const hp = ctx.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.value = 170;
+    hp.frequency.value = 180;
     hp.Q.value = 0.8;
     const box = ctx.createBiquadFilter();
     box.type = 'peaking';
-    box.frequency.value = 260;
+    box.frequency.value = 300;
     box.Q.value = 1.4;
-    box.gain.value = 1;
+    box.gain.value = 0.5;
     const presence = ctx.createBiquadFilter();
     presence.type = 'peaking';
-    presence.frequency.value = 1250;
-    presence.Q.value = 0.75;
-    presence.gain.value = 3.5;
+    presence.frequency.value = 1400;
+    presence.Q.value = 0.7;
+    presence.gain.value = 4.5;
     const lp1 = ctx.createBiquadFilter();
     lp1.type = 'lowpass';
     lp1.frequency.value = 5800;

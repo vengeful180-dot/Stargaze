@@ -191,7 +191,7 @@ interface Layers {
   arp: boolean;
 }
 
-const SECTION_GAIN: Record<SectionName, number> = { intro: 0.86, A: 0.95, B: 1, break: 0.86, A2: 1, B2: 1.03, outro: 0.9 };
+const SECTION_GAIN: Record<SectionName, number> = { intro: 0.86, A: 0.95, B: 1, break: 0.78, A2: 1, B2: 1.03, outro: 0.9 };
 
 interface MelRange {
   lo: number;
@@ -797,7 +797,9 @@ export function composeTrack(plan: TrackPlan): Score {
   // ---------------- arpeggios (bells / piano) ----------------
   const arpInst: InstId = st.drift ? (plan.melodyInst === 'bell' ? 'piano' : 'bell') : 'bell';
   const arpPat = rng.pick<readonly number[]>([[0, 1, 2, 3], [0, 1, 2, 3, 2, 1], [0, 2, 1, 3], [3, 2, 1, 0, 1, 2]]);
-  const arpRate = st.drift ? rng.pick([2, 4]) : 2;
+  // Drift breathes: quarter notes or dotted eighths, with more gaps
+  const arpRate = st.drift ? rng.weighted([[4, 2], [3, 1.5], [2, 0.6]] as const) : 2;
+  const arpSkip = st.drift ? 0.24 : 0.14;
   let prevArp: number[] | null = null;
   for (const sp of spans) {
     const L = layers[sp.sectionIndex];
@@ -810,7 +812,7 @@ export function composeTrack(plan: TrackPlan): Score {
     const gain = SECTION_GAIN[sp.section] * (arpInst === 'bell' ? 0.42 : 0.4) * (hasMelHere ? 0.75 : 1);
     let k = 0;
     for (let o = 0; o < sp.len; o += arpRate, k++) {
-      if (rng.chance(0.14) && k > 0) continue;
+      if (rng.chance(arpSkip) && k > 0) continue;
       const m = v[arpPat[k % arpPat.length] % v.length];
       addNote(arpInst, 'arp', sp.start + o, Math.min(sp.len - o, arpRate * 3), m, gain * (k % arpPat.length === 0 ? 1.1 : 1) * (1 + rng.gauss() * 0.08), human(0.006));
     }
