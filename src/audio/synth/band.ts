@@ -79,7 +79,7 @@ export const STYLE_GAIN: Record<string, number> = {
   'dusty-keys': 1,
   'sunday-tape': 1.06,
   'night-drive': 1,
-  drift: 1.3,
+  drift: 1.12,
   'cafe-boom-bap': 0.97,
 };
 
