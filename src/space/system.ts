@@ -3,7 +3,7 @@
 // (GAME_AU) so neighbouring worlds show as discs rather than dots, which reads better from a cabin window.
 import { Rng, hash } from '../core/rng';
 import { hslLinear, mixRgb } from '../core/color';
-import { SOLAR_RADIUS, type SystemRef } from './galaxy';
+import { SOLAR_RADIUS, nameOf, type SystemRef } from './galaxy';
 import { makeWord, moonName, planetName } from './names';
 
 export const GAME_AU = 3.0e10;
@@ -238,7 +238,7 @@ function makeSurface(rng: Rng, type: PlanetType): SurfaceParams {
   const giant = type === 'gas' || type === 'icegiant';
   const sea: Record<PlanetType, number> = {
     terran: rng.range(-0.05, 0.12), ocean: rng.range(0.22, 0.4), desert: rng.chance(0.3) ? rng.range(-0.35, -0.2) : -2,
-    arid: rng.chance(0.2) ? -0.3 : -2, ice: rng.chance(0.35) ? rng.range(-0.25, -0.05) : -2, lava: rng.range(-0.2, 0.0),
+    arid: rng.chance(0.2) ? -0.3 : -2, ice: rng.chance(0.35) ? rng.range(-0.25, -0.05) : -2, lava: rng.range(-0.38, -0.2),
     barren: -2, toxic: -2, exotic: rng.chance(0.6) ? rng.range(-0.15, 0.1) : -2, gas: -2, icegiant: -2,
   };
   const clouds: Record<PlanetType, number> = {
@@ -292,10 +292,11 @@ function moonOrbit(rng: Rng, radius: number, planetRadius: number): Orbit {
 
 export function generateSystem(ref: SystemRef): StarSystem {
   const rng = new Rng(hash(ref.seed, 0x5157));
+  const sysName = nameOf(ref);
   const starMass = Math.max(0.1, Math.pow(ref.luminosity, 1 / 3.5));
   const star: StarBody = {
     id: `${ref.id}:star`,
-    name: ref.name,
+    name: sysName,
     kind: 'star',
     radius: ref.radius * SOLAR_RADIUS * (ref.cls === 'RG' ? 0.35 : 1), // giants trimmed so they fit the compressed orbits
     orbit: null,
@@ -366,7 +367,8 @@ export function generateSystem(ref: SystemRef): StarSystem {
       orbit: makeOrbit(prng, r, starMass, prng.range(-0.04, 0.04)),
       parent: star,
       spinPeriod: prng.range(900, 3600) * (isGiant ? 0.6 : 1),
-      axialTilt: prng.range(0, 0.45),
+      // ringed worlds get a decent tilt so their rings catch the light
+      axialTilt: hasRings ? prng.range(0.32, 0.55) : prng.range(0, 0.45),
       seed: prng.uint(),
       type,
       surface,
@@ -379,7 +381,7 @@ export function generateSystem(ref: SystemRef): StarSystem {
       ringRocks: !!rings && prng.chance(0.7),
       special,
     };
-    planet.name = planetName(prng, ref.name, i, special);
+    planet.name = planetName(prng, sysName, i, special);
 
     // moons
     const nMoons = isGiant ? prng.int(1, 4) : prng.chance(0.55) ? prng.int(1, 2) : 0;

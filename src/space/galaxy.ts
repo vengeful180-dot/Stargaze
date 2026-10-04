@@ -33,7 +33,24 @@ export interface SystemRef extends StarInfo {
   index: number;
   pos: [number, number, number]; // ly
   seed: number;
-  name: string;
+}
+
+export interface NearSystem {
+  ref: SystemRef;
+  dist: number; // ly
+}
+
+const nameCache = new Map<number, string>();
+
+/** Names are generated lazily: the sky needs thousands of systems but only shows a few names. */
+export function nameOf(ref: SystemRef): string {
+  let n = nameCache.get(ref.id);
+  if (!n) {
+    n = systemName(ref.seed);
+    if (nameCache.size > 20000) nameCache.clear();
+    nameCache.set(ref.id, n);
+  }
+  return n;
 }
 
 const CLASS_TABLE: readonly (readonly [StarClass, number, [number, number], [number, number]])[] = [
@@ -127,7 +144,7 @@ export class Galaxy {
       ];
       const seed = hash(this.seed, cx, cy, cz, i, 0x57a2);
       const star = rollStar(new Rng(seed));
-      list.push({ ...star, id: systemId(cx, cy, cz, i), cell: [cx, cy, cz], index: i, pos, seed, name: systemName(seed) });
+      list.push({ ...star, id: systemId(cx, cy, cz, i), cell: [cx, cy, cz], index: i, pos, seed });
     }
     if (this.cells.size > 40000) this.cells.clear();
     this.cells.set(key, list);
@@ -140,10 +157,10 @@ export class Galaxy {
   }
 
   /** All systems within radius (ly) of p, nearest first. */
-  systemsNear(p: readonly number[], radius: number): (SystemRef & { dist: number })[] {
+  systemsNear(p: readonly number[], radius: number): NearSystem[] {
     const c0 = p.map((v) => Math.floor(v / CELL_LY));
     const k = Math.ceil(radius / CELL_LY);
-    const out: (SystemRef & { dist: number })[] = [];
+    const out: NearSystem[] = [];
     for (let dx = -k; dx <= k; dx++)
       for (let dy = -k; dy <= k; dy++)
         for (let dz = -k; dz <= k; dz++) {
@@ -151,7 +168,7 @@ export class Galaxy {
           if (cy < -60 || cy > 60) continue;
           for (const s of this.cellSystems(c0[0] + dx, cy, c0[2] + dz)) {
             const d = Math.hypot(s.pos[0] - p[0], s.pos[1] - p[1], s.pos[2] - p[2]);
-            if (d <= radius) out.push({ ...s, dist: d });
+            if (d <= radius) out.push({ ref: s, dist: d });
           }
         }
     out.sort((a, b) => a.dist - b.dist);
@@ -161,7 +178,7 @@ export class Galaxy {
   /** A good place to begin: the nearest system to the start point with a sun-like star. */
   startSystem(): SystemRef {
     const near = this.systemsNear(START_LY, 90);
-    const nice = near.find((s) => s.cls === 'G' || s.cls === 'K' || s.cls === 'F');
-    return nice ?? near[0] ?? this.cellSystems(0, 0, 0)[0];
+    const nice = near.find((s) => s.ref.cls === 'G' || s.ref.cls === 'K' || s.ref.cls === 'F');
+    return (nice ?? near[0])?.ref ?? this.cellSystems(0, 0, 0)[0];
   }
 }
