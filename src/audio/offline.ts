@@ -52,6 +52,8 @@ export interface OfflineOptions {
   quality?: 'high' | 'low';
   /** profiling: only keep these event streams (instrument ids, 'drums', 'fx') */
   only?: string[];
+  /** broadcast plate reverb (default on) */
+  plate?: boolean;
 }
 
 export interface OfflineLogEntry {
@@ -113,6 +115,7 @@ export async function renderOffline(o: OfflineOptions): Promise<OfflineResult> {
     radio.setCharacter(o.character ?? 0.7);
     radio.setVolume(o.volume ?? 0.75);
     radio.attach(eng);
+    if (o.plate === false) eng.broadcastSend = null;
     const s2 = ctx.createChannelSplitter(2);
     if (o.rawMix) radio.debugRawMixTap().connect(s2);
     else radio.mixTap!.connect(s2);

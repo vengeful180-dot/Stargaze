@@ -14,7 +14,14 @@ export interface BandHost {
   stats: NodeStats;
   quality: 'high' | 'low';
   maxVoices: number;
+  /** shared broadcast reverb input (optional) */
+  broadcastSend: AudioNode | null;
 }
+
+/** Sends into the broadcast plate reverb, per instrument bus. */
+export const REVERB_SEND: Record<string, number> = {
+  ep: 0.24, piano: 0.22, guitar: 0.16, pad: 0.32, lead: 0.34, bell: 0.4, bass: 0, drums: 0.04,
+};
 
 interface Waves {
   bass: PeriodicWave;
@@ -58,9 +65,9 @@ export const MIX = {
   rim: 0.28,
   snap: 0.28,
   brush: 0.46,
-  hat: 0.28,
-  ohat: 0.19,
-  shaker: 0.2,
+  hat: 0.42,
+  ohat: 0.26,
+  shaker: 0.24,
   crackle: 0.045,
   hiss: 0.0045,
   riser: 0.045,
@@ -95,6 +102,10 @@ export class Band {
   private mix: GainNode;
   private duck: GainNode;
   private secFilter: BiquadFilterNode;
+  /** params that the score's fades / the player's fades automate (dry path + reverb send path) */
+  private mixParams: AudioParam[] = [];
+  private outParams: AudioParam[] = [];
+  private filterParams: AudioParam[] = [];
   private flutter: ConstantSourceNode;
   private bus = {} as Record<Bus, AudioNode>;
   private fixed: AudioNode[] = [];
@@ -176,6 +187,26 @@ export class Band {
     this.duck.connect(sum);
     const subShelf = filt('lowshelf', 75, 0.7, -3);
     sum.connect(subShelf).connect(this.secFilter).connect(tape).connect(this.mix).connect(this.out);
+    this.mixParams.push(this.mix.gain);
+    this.outParams.push(this.out.gain);
+    this.filterParams.push(this.secFilter.frequency);
+    // reverb sends share the dry path's section filter and fades
+    let sendSum: GainNode | null = null;
+    if (host.broadcastSend) {
+      sendSum = g(1);
+      const sendFilter = filt('lowpass', 20000, 0.75);
+      const sendMix = g(this.gain);
+      const sendOut = g(1);
+      sendSum.connect(sendFilter).connect(sendMix).connect(sendOut).connect(host.broadcastSend);
+      this.mixParams.push(sendMix.gain);
+      this.outParams.push(sendOut.gain);
+      this.filterParams.push(sendFilter.frequency);
+    }
+    const send = (from: AudioNode, bus: string) => {
+      const amt = REVERB_SEND[bus] ?? 0;
+      if (!sendSum || amt <= 0) return;
+      from.connect(g(amt)).connect(sendSum);
+    };
 
     // ---- wow & flutter: one shared pitch bus for every source of the track ----
     this.flutter = ctx.createConstantSource();
@@ -206,6 +237,7 @@ export class Band {
       inp.connect(drive).connect(shelf).connect(lp).connect(pan);
       const outN = g(1);
       pan.connect(outN);
+      send(outN, 'ep');
       if (host.quality === 'low') {
         toDuck(outN);
         this.bus.ep = inp;
@@ -236,6 +268,7 @@ export class Band {
       const lp = filt('lowpass', 5200, 0.6);
       inp.connect(shelf).connect(lp);
       toDuck(lp);
+      send(lp, 'piano');
       this.bus.piano = inp;
     }
     if (used.has('guitar')) {
@@ -244,6 +277,7 @@ export class Band {
       const hp = filt('highpass', 90, 0.7);
       inp.connect(hp).connect(lp);
       toDuck(lp);
+      send(lp, 'guitar');
       this.bus.guitar = inp;
     }
     if (used.has('bass')) {
@@ -261,6 +295,7 @@ export class Band {
       lfo(0.06, 350, lp.frequency);
       inp.connect(lp);
       toDuck(lp);
+      send(lp, 'pad');
       this.bus.pad = inp;
       // the two detuned oscillators of every pad note go hard-ish left and right
       const pl = ctx.createStereoPanner();
@@ -277,6 +312,7 @@ export class Band {
       const lp = filt('lowpass', 3800, 0.6);
       inp.connect(lp);
       toDuck(lp);
+      send(lp, 'lead');
       this.bus.lead = inp;
       // vibrato: LFO -> depth gain (automated per note) -> each lead oscillator's detune
       const vl = ctx.createOscillator();
@@ -295,6 +331,7 @@ export class Band {
         inp.connect(trem).connect(lp);
       } else inp.connect(lp);
       toDuck(lp);
+      send(lp, 'bell');
       this.bus.bell = inp;
     }
     // drums: own bus, not ducked
@@ -304,6 +341,10 @@ export class Band {
       const lp = filt('lowpass', this.plan.drums === 'crisp' ? 8000 : this.rng.range(6000, 7200), 0.6);
       const sat = shaper(warmCurve(1.3, 0.05));
       inp.connect(hp).connect(lp).connect(sat).connect(sum);
+      // only the snare/rim region goes to the plate (keeps the kick dry)
+      const dhp = filt('highpass', 450, 0.7);
+      sat.connect(dhp);
+      send(dhp, 'drums');
       this.bus.drums = inp;
     }
 
@@ -346,8 +387,10 @@ export class Band {
     }
     if (this.t0 < now - 0.05) {
       // joining: bring FX state up to date and restart long notes that are still sounding
-      this.out.gain.setValueAtTime(0, now);
-      this.out.gain.setTargetAtTime(1, now, 0.12);
+      for (const p of this.outParams) {
+        p.setValueAtTime(0, now);
+        p.setTargetAtTime(1, now, 0.12);
+      }
       while (this.cursor < this.events.length && this.t0 + this.events[this.cursor].t < now) {
         const ev = this.events[this.cursor++];
         if (ev.k === 'fx') this.applyFxNow(ev, now);
@@ -388,12 +431,13 @@ export class Band {
   stop(at: number, fade = 0.4) {
     if (this.stopAt <= at) return;
     this.stopAt = at;
-    const p = this.out.gain;
-    try {
-      p.cancelScheduledValues(at);
-      p.setTargetAtTime(0, at, Math.max(0.01, fade / 4));
-    } catch {
-      /* ignore */
+    for (const p of this.outParams) {
+      try {
+        p.cancelScheduledValues(at);
+        p.setTargetAtTime(0, at, Math.max(0.01, fade / 4));
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -756,19 +800,21 @@ export class Band {
   private playFx(ev: FxEv, when: number) {
     switch (ev.fx) {
       case 'filter': {
-        const f = this.secFilter.frequency;
-        if (ev.dur <= 0.02) f.setValueAtTime(ev.to, when);
-        else {
-          f.setValueAtTime(this.filterValue, when);
-          f.exponentialRampToValueAtTime(Math.max(40, ev.to), when + ev.dur);
+        for (const f of this.filterParams) {
+          if (ev.dur <= 0.02) f.setValueAtTime(ev.to, when);
+          else {
+            f.setValueAtTime(this.filterValue, when);
+            f.exponentialRampToValueAtTime(Math.max(40, ev.to), when + ev.dur);
+          }
         }
         this.filterValue = ev.to;
         break;
       }
       case 'fade': {
-        const gp = this.mix.gain;
-        gp.setValueAtTime(this.fadeValue * this.gain, when);
-        gp.linearRampToValueAtTime(Math.max(0, ev.to) * this.gain, when + ev.dur);
+        for (const gp of this.mixParams) {
+          gp.setValueAtTime(this.fadeValue * this.gain, when);
+          gp.linearRampToValueAtTime(Math.max(0, ev.to) * this.gain, when + ev.dur);
+        }
         this.fadeValue = ev.to;
         break;
       }
@@ -776,9 +822,10 @@ export class Band {
         const o = this.flutter.offset;
         o.setValueAtTime(0, when);
         o.linearRampToValueAtTime(-2800, when + ev.dur);
-        const gp = this.mix.gain;
-        gp.setValueAtTime(this.fadeValue * this.gain, when);
-        gp.setTargetAtTime(0, when + ev.dur * 0.35, ev.dur * 0.22);
+        for (const gp of this.mixParams) {
+          gp.setValueAtTime(this.fadeValue * this.gain, when);
+          gp.setTargetAtTime(0, when + ev.dur * 0.35, ev.dur * 0.22);
+        }
         this.fadeValue = 0;
         break;
       }
@@ -790,11 +837,11 @@ export class Band {
 
   private applyFxNow(ev: FxEv, now: number) {
     if (ev.fx === 'filter') {
-      this.secFilter.frequency.setValueAtTime(ev.to, now);
+      for (const f of this.filterParams) f.setValueAtTime(ev.to, now);
       this.filterValue = ev.to;
     } else if (ev.fx === 'fade' || ev.fx === 'tapestop') {
       this.fadeValue = ev.fx === 'fade' ? ev.to : 0;
-      this.mix.gain.setValueAtTime(this.fadeValue * this.gain, now);
+      for (const gp of this.mixParams) gp.setValueAtTime(this.fadeValue * this.gain, now);
     }
   }
 

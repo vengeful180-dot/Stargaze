@@ -5,6 +5,7 @@ import { Rng, hash, hashString } from '../core/rng';
 import { Engine } from './engine';
 import { LinkPlayer, type LinkResult, TapeDeck } from './media';
 import { Glue, Speaker } from './speaker';
+import { renderPlateIR } from './room';
 import { StationPlayer, makeStations, stationOffset } from './stations';
 import { Tuner } from './tuner';
 import { type RadioBand, type RadioInfo, STYLE_LABELS, type StationDef, type Vec3 } from './types';
@@ -42,6 +43,8 @@ export const RADIO_GAIN = 1.48;
 /** Level trim for the player's own (already mastered) music. */
 export const MEDIA_TRIM = 0.42;
 export const ROOM_SEND = 0.3;
+/** level of the broadcast plate reverb return */
+export const PLATE_RETURN = 0.55;
 
 /** Reception vs dial offset (MHz): locked within 50 kHz, gone beyond ~250 kHz. */
 export function signalAt(delta: number): number {
@@ -129,6 +132,26 @@ export class Radio {
     const roomSend = ctx.createGain();
     roomSend.gain.value = ROOM_SEND;
 
+    // the stations' own studio reverb (a shared plate fed by every band's sends)
+    if (eng.quality === 'high') {
+      const plate = ctx.createConvolver();
+      plate.normalize = false;
+      const [pl, pr] = renderPlateIR(ctx.sampleRate);
+      const ir = ctx.createBuffer(2, pl.length, ctx.sampleRate);
+      ir.copyToChannel(pl, 0);
+      ir.copyToChannel(pr, 1);
+      plate.buffer = ir;
+      const sendIn = ctx.createGain();
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 280;
+      hp.Q.value = 0.7;
+      const ret = ctx.createGain();
+      ret.gain.value = PLATE_RETURN;
+      sendIn.connect(hp).connect(plate).connect(ret).connect(stationsIn);
+      eng.broadcastSend = sendIn;
+      eng.stats.addNodes(4);
+    }
     stationsIn.connect(glue.input);
     glue.output.connect(mixTap).connect(speaker.input);
     mediaIn.connect(speaker.input);

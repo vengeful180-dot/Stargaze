@@ -33,6 +33,8 @@ export class Engine {
   lookahead = 0.2;
   hiddenLookahead = 1.6;
   listener = { pos: [0, 1.15, 0] as Vec3, fwd: [0, 0, -1] as Vec3, up: [0, 1, 0] as Vec3 };
+  /** input of the broadcast plate reverb (set by the radio); bands send keys/melody into it */
+  broadcastSend: AudioNode | null = null;
   private tickers: Ticker[] = [];
   private vols = { master: 1, music: 1, ambience: 1, sfx: 1 };
   private hasListenerParams: boolean;

@@ -66,3 +66,32 @@ export function renderRoomIR(fs: number, o: RoomOptions = {}): [F32, F32] {
   }
   return out;
 }
+
+/** A dense, slightly dark plate for the broadcast itself (the "studio" reverb on keys and melody). */
+export function renderPlateIR(fs: number, rt60 = 1.3, pre = 0.016, seed = 0x91a7e): [F32, F32] {
+  const len = Math.round(fs * (pre + rt60 * 1.2));
+  const out: [F32, F32] = [new Float32Array(len), new Float32Array(len)];
+  for (let c = 0; c < 2; c++) {
+    const lo = white(len, seed + 3 + c * 77);
+    const hi = white(len, seed + 9 + c * 77);
+    Biquad.lp(fs, 1800, 0.7).run(lo);
+    Biquad.hp(fs, 1800, 0.7).run(hi);
+    const t0 = Math.round(pre * fs);
+    const kLo = -6.91 / rt60;
+    const kHi = -6.91 / (rt60 * 0.55);
+    const ch = out[c];
+    for (let i = t0; i < len; i++) {
+      const t = (i - t0) / fs;
+      const build = Math.min(1, t / 0.01);
+      ch[i] = (lo[i] * Math.exp(kLo * t) + hi[i] * Math.exp(kHi * t) * 0.7) * build;
+    }
+    Biquad.lp(fs, 6500, 0.6).run(ch);
+    const fo = Math.round(fs * 0.1);
+    for (let i = 0; i < fo; i++) ch[len - 1 - i] *= i / fo;
+    let e = 0;
+    for (let i = 0; i < len; i++) e += ch[i] * ch[i];
+    const g = 1 / Math.sqrt(e || 1);
+    for (let i = 0; i < len; i++) ch[i] *= g;
+  }
+  return out;
+}

@@ -18,7 +18,7 @@ export function renderKick(fs: number, seed: number): F32 {
   const fEnd = 53 + n.u() * 6;
   const fStart = 150 + n.u() * 25;
   const tp = 0.028 + n.u() * 0.008;
-  const ta = 0.19 + n.u() * 0.06;
+  const ta = 0.16 + n.u() * 0.05;
   let ph = 0;
   const clickLp = Biquad.lp(fs, 2600, 0.6);
   for (let i = 0; i < len; i++) {
@@ -60,13 +60,13 @@ export function renderSnare(fs: number, seed: number, crisp = false): F32 {
   // the mid "crack" that makes a snare speak on small speakers
   const crack = white(len, seed ^ 0x2468);
   Biquad.bp(fs, 1500 + n.u() * 300, 1.1).run(crack);
-  const tn = crisp ? 0.11 : 0.13;
+  const tn = crisp ? 0.085 : 0.095;
   for (let i = 0; i < len; i++) {
     const t = i / fs;
-    const env = (1 - Math.exp(-t / 0.0005)) * (0.85 * Math.exp(-t / tn) + 0.15 * Math.exp(-t / 0.26));
+    const env = (1 - Math.exp(-t / 0.0005)) * (0.9 * Math.exp(-t / tn) + 0.1 * Math.exp(-t / 0.18));
     noise[i] = noise[i] * env + rattle[i] * Math.exp(-t / 0.09) * 0.35 + crack[i] * Math.exp(-t / 0.045) * (crisp ? 1.1 : 0.9);
   }
-  tinyRoom(noise, fs, crisp ? 0.18 : 0.3, seed);
+  tinyRoom(noise, fs, crisp ? 0.14 : 0.2, seed);
   const out = new Float32Array(len);
   for (let i = 0; i < len; i++) out[i] = body[i] * 0.55 + noise[i] * (crisp ? 0.8 : 0.7);
   saturate(out, crisp ? 1.6 : 1.3);
