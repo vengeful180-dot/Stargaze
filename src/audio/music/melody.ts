@@ -201,7 +201,7 @@ export function clashes(p: number, voicing: readonly number[]): boolean {
 function resolveClash(p: number, voicing: readonly number[], pcs: readonly number[], lo: number, hi: number, dir = 0, avoid?: number): number {
   if (!clashes(p, voicing) && pcs.includes(mod12(p))) return p;
   // prefer continuing in the direction the line was moving, and not landing back on the previous note
-  for (let r = 1; r <= 7; r++) {
+  for (let r = 1; r <= 12; r++) {
     const order = dir < 0 ? [p - r, p + r] : [p + r, p - r];
     for (const cand of order) {
       if (cand === avoid && r < 4) continue;
@@ -254,6 +254,8 @@ export function realiseMotif(m: Motif, slot: number, ctx: MelodyCtx, prevPitch: 
     const pcsHere = strong ? stable : allowed;
     const avoidPrev = mn.step !== 0 ? pitch ?? undefined : undefined;
     let q = resolveClash(p, ctx.voicingAt(pos), pcsHere, lo, hi, Math.sign(mn.step), avoidPrev);
+    // still clashing: accept any chord-scale tone, then (last resort) only respect the current chord
+    if (clashes(q, ctx.voicingAt(pos))) q = resolveClash(p, ctx.voicingAt(pos), allowed, lo, hi, Math.sign(mn.step), avoidPrev);
     if (clashes(q, ctx.voicingAt(pos))) q = resolveClash(p, ctx.coreVoicingAt(pos), pcsHere, lo, hi, Math.sign(mn.step), avoidPrev);
     p = q;
     // a note that sustains over a chord change must still fit the new chord

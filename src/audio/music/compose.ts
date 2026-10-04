@@ -5,12 +5,12 @@ import { trackTitle } from '../../space/names';
 import type { StationStyle } from '../types';
 import { STYLES, type BassStyle, type BellKind, type CompStyle, type DrumStyle, type InstId } from './styles';
 import {
-  type Chord, type Key, type Quality, QUALITIES, keyName, mod12, voiceChord,
+  type Chord, type Key, type Quality, QUALITIES, SCALES, keyName, melodyAllowed, mod12, voiceChord,
 } from './theory';
 import { type PChord, evolveLoop, parseProgression, pickProgression, toAbsolute } from './progressions';
 import { type DrumId, type FillKind, drumBar, makeGroove } from './drums';
 import {
-  type ChordSeg, type MelNote, type MelodyCtx, type Motif, type Slot, PHRASE_PLANS, makeAnswer, makeMotif, realiseMotif, varyMotif,
+  type ChordSeg, type MelNote, type MelodyCtx, type Motif, type Slot, PHRASE_PLANS, clashes, makeAnswer, makeMotif, realiseMotif, varyMotif,
 } from './melody';
 
 export type SectionName = 'intro' | 'A' | 'B' | 'break' | 'A2' | 'B2' | 'outro';
@@ -522,7 +522,8 @@ export function composeTrack(plan: TrackPlan): Score {
             fill = rng.chance(0.55) ? rng.pick<FillKind>(['openhat', 'flam', 'roll', 'none']) : 'none';
           }
         }
-        const hits = drumBar(groove, b, fill, mode === 'light', rng);
+        const busy = (sec.name === 'B' || sec.name === 'B2' || sec.name === 'A2') && b >= sec.bars / 2;
+        const hits = drumBar(groove, b, fill, mode === 'light', rng, busy);
         const gain = SECTION_GAIN[sec.name];
         const ks: number[] = [];
         for (const h of hits) {
@@ -550,8 +551,8 @@ export function composeTrack(plan: TrackPlan): Score {
       if (mod12(m) !== pc) continue;
       let c = Math.abs(m - prevBass) * 0.5 + Math.abs(m - 40) * 0.4;
       if (voicingLow - m < 9) c += 1;
-      if (voicingLow - m < 7) c += 6;
-      if (m < 33) c += 2.5;
+      if (voicingLow - m < 7) c += 12;
+      if (m < 33) c += 1.5;
       if (c < bc) {
         bc = c;
         best = m;
@@ -593,27 +594,58 @@ export function composeTrack(plan: TrackPlan): Score {
     } else {
       hits = [0];
     }
-    hits = Array.from(new Set(hits)).sort((a, b) => a - b);
+    // a short diatonic walk into the next phrase (every few 4-bar boundaries)
+    const spanEndBar = (sp.start + sp.len) / 16;
+    const phraseEnd = next && next.sectionIndex === sp.sectionIndex && Number.isInteger(spanEndBar) && spanEndBar % 4 === 0 && sp.len >= 8;
+    let run: { at: number; m: number }[] | null = null;
+    if (phraseEnd && style !== 'pedal' && style !== 'long' && rng.chance(style === 'walk' ? 0.5 : 0.3)) {
+      const target = bassPitch(next.chord.bass ?? next.chord.root, next.voicing[0] ?? 48);
+      const scale = SCALES[key.mode].map((i) => mod12(key.tonic + i));
+      const ceiling = Math.min(48, vLow - 7); // keep clear of the chord voicing
+      const walk = (from: number) => {
+        const notes: number[] = [];
+        let m = target;
+        for (let k = 0; k < 3; k++) {
+          m += from;
+          while (!scale.includes(mod12(m))) m += from;
+          notes.unshift(m);
+        }
+        return notes;
+      };
+      let notes = walk(rng.chance(0.5) ? 1 : -1); // approach from above (1) or below (-1)
+      if (notes.some((x) => x > ceiling)) notes = walk(-1);
+      if (notes.every((x) => x >= 31 && x <= ceiling)) run = notes.map((mm, k) => ({ at: sp.len - 6 + k * 2, m: mm }));
+    }
     // approach note into the next chord
     let approach: { at: number; m: number } | null = null;
-    if (next && next.sectionIndex === sp.sectionIndex && style !== 'pedal' && (next.chord.bass ?? next.chord.root) !== rootPc) {
+    if (!run && next && next.sectionIndex === sp.sectionIndex && style !== 'pedal' && (next.chord.bass ?? next.chord.root) !== rootPc) {
       const prob = style === 'walk' ? 0.55 : style === 'long' ? 0.25 : 0.4;
       if (rng.chance(prob)) {
         const nextRoot = bassPitch(next.chord.bass ?? next.chord.root, next.voicing[0] ?? 48);
-        const at = sp.len - rng.pick(style === 'walk' ? [2, 4] : [2, 1, 2]);
-        const kind = rng.weighted([['below', 2], ['above', 1.5], ['fifth', 1]] as const);
-        let m = kind === 'below' ? nextRoot - 1 : kind === 'above' ? nextRoot + 1 : nextRoot + 7 > 47 ? nextRoot - 5 : nextRoot + 7;
-        if (m < 31) m += 12;
-        const nLow = next.voicing[0] ?? 50;
-        if (m > Math.min(48, nLow - 7) && m - 12 >= 31) m -= 12;
+        let at = sp.len - rng.pick(style === 'walk' ? [2, 4] : [2, 1, 2]);
+        // the approach sounds under the current chord: stay clear of both voicings
+        const ceiling = Math.min(48, Math.min(next.voicing[0] ?? 50, vLow) - 7);
+        const first = rng.weighted([['below', 2], ['above', 1.5], ['fifth', 1]] as const);
+        const order = [first, ...(['below', 'above', 'fifth'] as const).filter((k) => k !== first)];
+        let m = -1;
+        for (const kind of order) {
+          let c = kind === 'below' ? nextRoot - 1 : kind === 'above' ? nextRoot + 1 : nextRoot + 7;
+          while (c > ceiling) c -= 12;
+          if (c < 31) continue;
+          m = c;
+          break;
+        }
+        if (m < 0) at = -1;
         if (at > 0) {
           approach = { at, m };
           hits = hits.filter((h) => h < at - 1);
         }
       }
     }
+    hits = Array.from(new Set(hits)).sort((a, b) => a - b);
+    if (run) hits = hits.filter((h) => h < run![0].at - 1);
     hits.forEach((h, k) => {
-      const nextHit = k + 1 < hits.length ? hits[k + 1] : approach ? approach.at : sp.len;
+      const nextHit = k + 1 < hits.length ? hits[k + 1] : approach ? approach.at : run ? run[0].at : sp.len;
       let m = root;
       if (k > 0) {
         const r = rng.next();
@@ -633,6 +665,10 @@ export function composeTrack(plan: TrackPlan): Score {
     if (approach) {
       addNote('bass', 'bass', sp.start + approach.at, sp.len - approach.at - 0.3, approach.m, 0.62 * gain, human(0.004) + 0.004);
       prevBass = approach.m;
+    }
+    if (run) {
+      run.forEach((r, k) => addNote('bass', 'bass', sp.start + r.at, 1.7, r.m, (0.6 + 0.05 * k) * gain, human(0.004) + 0.004));
+      prevBass = run[run.length - 1].m;
     }
   }
 
@@ -758,13 +794,36 @@ export function composeTrack(plan: TrackPlan): Score {
       vel: range.vel * SECTION_GAIN[sec.name], rng,
     };
     const slots = Math.floor(sec.bars / 2);
+    const doubled = sec.name === 'B2' && inst !== 'bell' && L.melody === 'main' && rng.chance(0.5);
     let plan2: readonly Slot[];
     if (L.melody === 'sparse') plan2 = rng.pick<readonly Slot[]>([['-', 'M', '-', 'A'], ['-', '-', 'M', '-'], ['-', 'A', '-', 'M']]);
     else if (L.melody === 'frag') plan2 = rng.pick<readonly Slot[]>([['-', 'V', '-', '-'], ['-', '-', 'V', '-'], ['V', '-', '-', '-']]);
     else plan2 = rng.pick(PHRASE_PLANS);
+    // a second voice answers in the rests of the main melody (call and response between instruments)
+    const counterInst: InstId = inst === 'bell' ? (plan.chordInst === 'piano' ? 'ep' : 'piano') : 'bell';
+    const counterProb = sec.name === 'B2' ? 0.7 : sec.name === 'A2' || sec.name === 'B' ? 0.45 : 0;
     for (let k = 0; k < slots; k++) {
       const slot = plan2[k % plan2.length];
-      if (slot === '-') continue;
+      if (slot === '-') {
+        if ((L.melody === 'main' || L.melody === 'var') && k > 0 && rng.chance(counterProb)) {
+          const cr = melodyRange(counterInst, plan.bell);
+          // the answer must also sit well against main-melody notes still ringing
+          const melAt = (p: number) => melodyNotes.filter(({ n }) => n.pos <= p && n.pos + n.len > p).map(({ n }) => n.midi);
+          const cctx: MelodyCtx = {
+            ...ctx, lo: cr.lo, hi: cr.hi, center: cr.center + 2, vel: cr.vel * 0.72 * SECTION_GAIN[sec.name],
+            voicingAt: (p) => [...voicingAt(p), ...melAt(p)],
+            coreVoicingAt: (p) => [...coreVoicingAt(p), ...melAt(p)],
+          };
+          const ans = makeMotif(rng, [2, 4], true, 32);
+          const slotEnd = start + (k + 1) * 32;
+          const r = realiseMotif(ans, start + k * 32 + 4, cctx, null, { resolve: true, graceProb: 0 });
+          for (const n of r.notes) {
+            if (n.pos >= slotEnd - 2) continue;
+            melodyNotes.push({ n: { ...n, len: Math.min(n.len, slotEnd - n.pos - 0.5) }, inst: counterInst });
+          }
+        }
+        continue;
+      }
       const slotPos = start + k * 32;
       let motif: Motif;
       let resolve = false;
@@ -786,12 +845,55 @@ export function composeTrack(plan: TrackPlan): Score {
       }
       const r = realiseMotif(motif, slotPos, ctx, prevMel, { resolve, lift, graceProb: inst === 'ep' || inst === 'piano' || inst === 'guitar' ? 0.08 : 0.03 });
       for (const n of r.notes) melodyNotes.push({ n, inst });
+      if (doubled) {
+        // soft mallet doubling (an octave up when there is room) for lift in the last melodic section
+        for (const n of r.notes) {
+          if (n.grace) continue;
+          const up = n.midi + 12 <= 88 ? 12 : 0;
+          melodyNotes.push({ n: { ...n, midi: n.midi + up, vel: n.vel * 0.5 }, inst: 'bell' });
+        }
+      }
       if (r.last !== null) prevMel = r.last;
     }
   });
+  const melStart = events.length;
   for (const { n, inst } of melodyNotes) {
     const extra = (n.grace ? -n.grace : 0) + human(0.008);
     addNote(inst, 'melody', n.pos, n.len, n.midi, n.vel, extra);
+  }
+  // final safety pass against what actually sounds (anticipations, rolls, pads): no minor 2nds / 9ths
+  {
+    const harmony = events.filter((e): e is NoteEv => e.k === 'n' && (e.role === 'chord' || e.role === 'pad'));
+    const sounding = (t0: number, t1: number) => harmony.filter((h) => h.t < t1 && h.t + h.d > t0);
+    const drop = new Set<ScoreEv>();
+    for (let i = melStart; i < events.length; i++) {
+      const e = events[i] as NoteEv;
+      const hs = sounding(e.t + 0.03, e.t + e.d - 0.03).filter((h) => clashes(e.m, [h.m]));
+      if (!hs.length) continue;
+      // 1) an anticipated chord arrives during the note: end the note just before it
+      const later = Math.min(...hs.map((h) => h.t));
+      if (later > e.t + 0.12) {
+        e.d = later - e.t - 0.02;
+        continue;
+      }
+      // 2) move to the nearest chord-scale tone that sits well with everything sounding
+      const sp = spanAt(e.p);
+      const allowedPcs = melodyAllowed(sp.chord, key, false);
+      const all = sounding(e.t + 0.03, e.t + e.d - 0.03).map((h) => h.m);
+      let fixed = false;
+      for (let r = 1; r <= 7 && !fixed; r++) {
+        for (const c of [e.m + r, e.m - r]) {
+          if (allowedPcs.includes(mod12(c)) && !clashes(c, all)) {
+            e.m = c;
+            fixed = true;
+            break;
+          }
+        }
+      }
+      // 3) otherwise a short note is simply left out
+      if (!fixed) drop.add(e);
+    }
+    if (drop.size) for (let i = events.length - 1; i >= melStart; i--) if (drop.has(events[i])) events.splice(i, 1);
   }
 
   // ---------------- arpeggios (bells / piano) ----------------

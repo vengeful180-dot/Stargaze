@@ -273,7 +273,7 @@ function validVoicing(notes: number[]): boolean {
  * If the register is too tight for this chord, it widens a little at a time. */
 export function voiceChord(c: Chord, prev: readonly number[] | null, o: VoiceOpts): number[] {
   // widen upwards first: a voicing pushed down into the bass register muddies the low end
-  const steps: readonly (readonly [number, number])[] = [[0, 0], [1, 3], [2, 5], [3, 8], [6, 10]];
+  const steps: readonly (readonly [number, number])[] = [[0, 0], [0, 3], [1, 5], [2, 8], [3, 10], [6, 12]];
   for (const [dl, dh] of steps) {
     const v = voiceChordIn(c, prev, dl || dh ? { ...o, lo: o.lo - dl, hi: o.hi + dh, maxSpan: o.maxSpan + Math.max(dl, dh) / 2 } : o);
     if (v) return v;

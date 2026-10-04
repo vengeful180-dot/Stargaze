@@ -18,6 +18,8 @@ export interface DrumGroove {
   snareDrum: DrumId;
   ghosts: number[];
   hats: number[]; // 16 velocities
+  /** a busier hat pattern for the second half of melodic sections */
+  hatsB: number[];
   hatDrum: DrumId;
   shaker: boolean;
   /** extra lateness of the backbeat in seconds */
@@ -53,6 +55,7 @@ export function makeGroove(style: DrumStyle, rng: Rng): DrumGroove {
     snareDrum: 'snare',
     ghosts: [],
     hats: rng.pick([H8, H8, H8P, H16]),
+    hatsB: [],
     hatDrum: 'hat',
     shaker: false,
     laidBack: rng.range(0.006, 0.016),
@@ -97,13 +100,15 @@ export function makeGroove(style: DrumStyle, rng: Rng): DrumGroove {
     default:
       break;
   }
+  const busier = new Map<number[], number[]>([[H8, H8P], [H8P, H16], [HQ, H8], [HOFF, H8], [H16, H16]]);
+  g.hatsB = busier.get(g.hats) ?? g.hats;
   return g;
 }
 
 export type FillKind = 'none' | 'roll' | 'kickdouble' | 'drop' | 'openhat' | 'flam' | 'stop';
 
 /** One bar of drums. `barInPhrase` counts from 0; fills happen on phrase ends. */
-export function drumBar(g: DrumGroove, barInPhrase: number, fill: FillKind, light: boolean, rng: Rng): DrumHit[] {
+export function drumBar(g: DrumGroove, barInPhrase: number, fill: FillKind, light: boolean, rng: Rng, busy = false): DrumHit[] {
   const hits: DrumHit[] = [];
   const v = (base: number, spread = 0.07) => Math.max(0.05, Math.min(1, base * (1 + rng.gauss() * spread)));
   const kicks = barInPhrase % 2 === 1 ? g.kickB : g.kickA;
@@ -115,9 +120,10 @@ export function drumBar(g: DrumGroove, barInPhrase: number, fill: FillKind, ligh
     // occasional extra ghost kick leading into the next bar
     if (rng.chance(0.12) && !kicks.includes(15) && cutFrom > 15) hits.push({ step: 15, drum: 'kick', vel: v(0.45) });
   }
+  const hats = busy ? g.hatsB : g.hats;
   for (let s = 0; s < 16; s++) {
     if (s >= cutFrom) break;
-    const hv = g.hats[s];
+    const hv = hats[s];
     if (hv <= 0) continue;
     if (rng.chance(0.05) && s % 4 !== 0) continue; // humans skip a hat now and then
     let drum: DrumId = g.hatDrum;
