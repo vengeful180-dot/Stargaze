@@ -1,0 +1,69 @@
+:root {
+  --ink: #f3e9da;
+  --ink-dim: #c9b9a3;
+  --ink-faint: #8d7f6e;
+  --amber: #f4c27a;
+  --amber-hot: #ffb35c;
+  --teal: #7fd6c9;
+  --panel: rgba(18, 14, 12, 0.72);
+  --panel-edge: rgba(244, 194, 122, 0.18);
+  --serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #070609;
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: block;
+  touch-action: none;
+  outline: none;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#ui > * {
+  pointer-events: auto;
+}
+
+.fatal {
+  max-width: 520px;
+  margin: 18vh auto 0;
+  padding: 28px 32px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.fatal h1 {
+  font-family: var(--serif);
+  font-weight: 500;
+  margin: 0 0 8px;
+}
