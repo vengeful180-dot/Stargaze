@@ -6,9 +6,9 @@ import type { ShipState } from './types';
 import { clamp, safeDisconnect, safeStop } from './util';
 
 export const AMB_LEVEL = {
-  hum: 0.05,
-  drone: 0.012,
-  vent: 0.008,
+  hum: 0.036,
+  drone: 0.009,
+  vent: 0.006,
   warp: 0.16,
   sub: 0.05,
   whoosh: 0.03,
@@ -195,10 +195,10 @@ export class Ambience {
     const set = (p: AudioParam, v: number, tau: number) => (immediate ? p.setValueAtTime(v, t) : p.setTargetAtTime(v, t, tau));
     const energy = 0.6 * speed + 0.4 * throttle;
     set(this.humLP.frequency, 100 + 140 * energy + 60 * warp, 0.6);
-    set(this.humG!.gain, AMB_LEVEL.hum * (1 + 0.9 * energy), 0.6);
+    set(this.humG!.gain, AMB_LEVEL.hum * (1 + 0.5 * energy), 0.6);
     const f0 = 46.5 * (1 + 0.1 * speed + 0.05 * throttle + 0.08 * warp);
     [1, 2.004, 3.01].forEach((h, i) => set(this.drone[i].frequency, f0 * h, 0.8));
-    set(this.droneG!.gain, AMB_LEVEL.drone * (1 + 1.2 * energy), 0.6);
+    set(this.droneG!.gain, AMB_LEVEL.drone * (1 + 0.6 * energy), 0.6);
     set(this.ventG!.gain, AMB_LEVEL.vent * (1 + 0.25 * throttle), 1.0);
     set(this.warpLP!.frequency, 45 + 230 * warp, 0.4);
     set(this.warpG!.gain, AMB_LEVEL.warp * warp * warp, 0.35);

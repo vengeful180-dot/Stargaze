@@ -229,8 +229,8 @@ const SYNTH: Record<SfxName, (fs: number) => F32> = {
 };
 
 export const SFX_LEVEL: Record<SfxName, number> = {
-  click: 0.35, switch: 0.45, knob: 0.22, button: 0.4, beep: 0.22, bump: 0.6,
-  'warp-spool': 0.35, 'warp-jump': 0.5, 'warp-exit': 0.35, seat: 0.4, telescope: 0.35, pour: 0.4,
+  click: 0.35, switch: 0.45, knob: 0.24, button: 0.4, beep: 0.08, bump: 0.36,
+  'warp-spool': 0.2, 'warp-jump': 0.6, 'warp-exit': 0.38, seat: 0.16, telescope: 0.35, pour: 0.18,
 };
 
 export class Sfx {

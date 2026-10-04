@@ -8,7 +8,8 @@ import { Radio } from './radio';
 import { makeStations } from './stations';
 import { BAND_DEBUG, MIX } from './synth/band';
 import { TUNER_LEVEL } from './tuner';
-import type { RadioInfo, StationDef, StationStyle } from './types';
+import { Sfx } from './sfx';
+import type { RadioInfo, SfxName, StationDef, StationStyle } from './types';
 
 export type OfflineAction =
   | { at: number; action: 'nextStation' | 'prevStation' | 'nextTrack' }
@@ -19,7 +20,8 @@ export type OfflineAction =
   | { at: number; action: 'ship'; value: { throttle?: number; speed?: number; warp?: number } }
   | { at: number; action: 'band'; value: 'stations' | 'tape' | 'link' }
   | { at: number; action: 'volume'; value: number }
-  | { at: number; action: 'stations'; value: number };
+  | { at: number; action: 'stations'; value: number }
+  | { at: number; action: 'sfx'; value: { name: SfxName; pos?: number[] } };
 
 export interface OfflineOptions {
   style: StationStyle;
@@ -131,6 +133,8 @@ export async function renderOffline(o: OfflineOptions): Promise<OfflineResult> {
       amb = new Ambience();
       amb.attach(eng);
     }
+    const sfx = new Sfx();
+    sfx.attach(eng);
 
     const actions = [...(o.actions ?? [])].sort((a, b) => a.at - b.at);
     let ai = 0;
@@ -170,6 +174,9 @@ export async function renderOffline(o: OfflineOptions): Promise<OfflineResult> {
           break;
         case 'stations':
           radio.setStations(makeStations(a.value));
+          break;
+        case 'sfx':
+          sfx.play(a.value.name, a.value.pos);
           break;
       }
     };

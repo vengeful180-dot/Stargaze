@@ -431,6 +431,7 @@ export class Band {
   stop(at: number, fade = 0.4) {
     if (this.stopAt <= at) return;
     this.stopAt = at;
+    this.stopFade = fade;
     for (const p of this.outParams) {
       try {
         p.cancelScheduledValues(at);
@@ -449,9 +450,11 @@ export class Band {
     this.stop(at + dur * 0.15, dur);
   }
 
+  /** true once the fade-out has decayed below ~-70 dB (8 time constants), so disposal cannot click */
   get stopDone() {
-    return this.ctx.currentTime > this.stopAt + 0.6;
+    return this.ctx.currentTime > this.stopAt + Math.max(0.6, this.stopFade * 2.2);
   }
+  private stopFade = 0.4;
 
   dispose() {
     if (this.disposed) return;
