@@ -23,7 +23,7 @@ export class Glue {
     pre.gain.value = Glue.TRIM / 2; // soft clipper curve spans +-2
     const clip = ctx.createWaveShaper();
     clip.curve = softClipCurve(0.72, 0.86, 2);
-    clip.oversample = '4x';
+    clip.oversample = '2x';
     const hp = ctx.createBiquadFilter();
     hp.type = 'highpass';
     hp.frequency.value = 30;

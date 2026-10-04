@@ -12,6 +12,8 @@ export interface BandHost {
   ctx: BaseAudioContext;
   bank: SampleBank;
   stats: NodeStats;
+  quality: 'high' | 'low';
+  maxVoices: number;
 }
 
 interface Waves {
@@ -74,6 +76,9 @@ export const STYLE_GAIN: Record<string, number> = {
   'cafe-boom-bap': 0.97,
 };
 
+/** Tools: keep only events of these instruments ('drums' for all drums, 'fx' for arrangement FX). */
+export const BAND_DEBUG: { only: string[] | null } = { only: null };
+
 const DRUM_LEVEL: Record<DrumId, number> = {
   kick: 1, snare: 1, rim: 1, snap: 1, brush: 1, hat: 1, ohat: 1, shaker: 1,
 };
@@ -102,6 +107,7 @@ export class Band {
   /** band output level (MIX.bandGain x style trim) */
   private gain = 1;
   private vibGain: GainNode | null = null;
+  private padSides: [AudioNode, AudioNode] | null = null;
   private lastLead: { end: number; m: number } | null = null;
   private nylon: boolean;
   private events: ScoreEv[];
@@ -115,9 +121,12 @@ export class Band {
     const ctx = (this.ctx = host.ctx);
     this.plan = score.plan;
     this.t0 = t0;
-    this.events = score.events;
+    const only = BAND_DEBUG.only;
+    this.events = only
+      ? score.events.filter((e) => (e.k === 'n' ? only.includes(e.inst) : e.k === 'd' ? only.includes('drums') : only.includes('fx')))
+      : score.events;
     this.rng = new Rng(hash(this.plan.seed, 0xba4d));
-    this.voices = new VoicePool(host.stats);
+    this.voices = new VoicePool(host.stats, host.maxVoices);
     this.nylon = this.plan.style === 'sunday-tape' ? this.rng.chance(0.75) : this.rng.chance(0.3);
     host.stats.bandsLive++;
 
@@ -136,7 +145,8 @@ export class Band {
       this.fixed.push(n);
       return n;
     };
-    const shaper = (curve: Float32Array<ArrayBuffer>, os: OverSampleType = '2x') => {
+    // gentle curves on band-limited signals alias very little, so no oversampling (saves CPU)
+    const shaper = (curve: Float32Array<ArrayBuffer>, os: OverSampleType = 'none') => {
       const n = ctx.createWaveShaper();
       n.curve = curve;
       n.oversample = os;
@@ -178,8 +188,7 @@ export class Band {
     lfo(this.rng.range(0.11, 0.17), 2.4 * w, this.flutter.offset);
     lfo(this.rng.range(5.5, 7.2), 0.9 * w, this.flutter.offset);
     // two slow incommensurate LFOs make the drift irregular
-    lfo(this.rng.range(0.06, 0.08), 1.8 * w, this.flutter.offset);
-    lfo(this.rng.range(0.26, 0.33), 1.2 * w, this.flutter.offset);
+    lfo(this.rng.range(0.06, 0.08), 2 * w, this.flutter.offset);
 
     // ---- instrument buses ----
     const used = new Set<string>();
@@ -197,6 +206,10 @@ export class Band {
       inp.connect(drive).connect(shelf).connect(lp).connect(pan);
       const outN = g(1);
       pan.connect(outN);
+      if (host.quality === 'low') {
+        toDuck(outN);
+        this.bus.ep = inp;
+      } else {
       // stereo chorus
       const dl = ctx.createDelay(0.05);
       const dr = ctx.createDelay(0.05);
@@ -215,6 +228,7 @@ export class Band {
       merge.connect(wet).connect(outN);
       toDuck(outN);
       this.bus.ep = inp;
+      }
     }
     if (used.has('piano')) {
       const inp = g(1);
@@ -248,6 +262,15 @@ export class Band {
       inp.connect(lp);
       toDuck(lp);
       this.bus.pad = inp;
+      // the two detuned oscillators of every pad note go hard-ish left and right
+      const pl = ctx.createStereoPanner();
+      const pr = ctx.createStereoPanner();
+      pl.pan.value = -0.6;
+      pr.pan.value = 0.6;
+      pl.connect(inp);
+      pr.connect(inp);
+      this.fixed.push(pl, pr);
+      this.padSides = [pl, pr];
     }
     if (used.has('lead')) {
       const inp = g(1);
@@ -409,6 +432,15 @@ export class Band {
   private flut(src: AudioScheduledSourceNode & { detune?: AudioParam }, v: Voice) {
     const p = src.detune;
     if (!p) return;
+    // wow & flutter are slow: sampling the bus once per render quantum (k-rate) is inaudible and
+    // avoids a per-sample exp2 in every oscillator
+    if (src instanceof OscillatorNode && p.automationRate !== 'k-rate') {
+      try {
+        p.automationRate = 'k-rate';
+      } catch {
+        /* older engines: stays a-rate */
+      }
+    }
     this.flutter.connect(p);
     v.mods.push({ from: this.flutter, param: p });
   }
@@ -568,12 +600,12 @@ export class Band {
     const f = midiToHz(ev.m);
     const off = when + ev.d;
     const rel = 0.55;
-    const end = off + rel * 7;
+    const end = off + rel * 5.5;
     const v = this.newVoice(when, end, 0, true, off + rel * 2.5);
     const peak = MIX.pad * ev.v * (ev.role === 'chord' ? MIX.padChord : 1);
     const atk = join ? 0.25 : this.plan.style === 'drift' ? 0.6 : 0.4;
     const w = waves(ctx).pad;
-    const merge = ctx.createChannelMerger(2);
+    const sides = this.padSides as [AudioNode, AudioNode];
     for (let s = 0; s < 2; s++) {
       const o = ctx.createOscillator();
       o.setPeriodicWave(w);
@@ -583,7 +615,7 @@ export class Band {
       a.gain.setValueAtTime(0, when);
       a.gain.setTargetAtTime(peak, when, atk);
       a.gain.setTargetAtTime(0, off, rel);
-      o.connect(a).connect(merge, 0, s);
+      o.connect(a).connect(sides[s]);
       this.flut(o, v);
       o.start(when);
       o.stop(end);
@@ -591,8 +623,6 @@ export class Band {
       v.srcs.push(o);
       v.env.push(a.gain);
     }
-    merge.connect(this.bus.pad);
-    v.nodes.push(merge);
     this.voices.add(v);
   }
 

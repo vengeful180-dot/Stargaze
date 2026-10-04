@@ -96,8 +96,14 @@ try {
     const meta = await page.evaluate((o) => window.__audioLab.render(o), job.opts);
     const { length, sampleRate } = meta;
     const CH = 48000 * 8;
+    const write = job.write ?? ['radio', 'mix'];
+    const need = new Set([...(write.includes('radio') ? [0, 1] : []), ...(write.includes('mix') ? [2, 3] : [])]);
     const chans = [];
     for (let c = 0; c < meta.channels; c++) {
+      if (!need.has(c)) {
+        chans.push(null);
+        continue;
+      }
       const data = new Float32Array(length);
       for (let s = 0; s < length; s += CH) {
         const n = Math.min(CH, length - s);
@@ -108,7 +114,6 @@ try {
       chans.push(data);
     }
     fs.mkdirSync(path.dirname(path.resolve(job.name)), { recursive: true });
-    const write = job.write ?? ['radio', 'mix'];
     const files = [];
     if (write.includes('radio')) {
       const f = `${job.name}-radio.wav`;

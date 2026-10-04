@@ -141,7 +141,7 @@ export class Radio {
     eng.stats.addNodes(13 + glue.nodes.length);
 
     this.tuner = new Tuner(eng);
-    this.tuner.out.connect(speaker.input);
+    this.tuner.connect(speaker.input);
     this.tuner.start(ctx.currentTime);
     this.tape.attach(ctx, mediaIn);
     this.link.attach(ctx, mediaIn);

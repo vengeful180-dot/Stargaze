@@ -25,7 +25,10 @@ export const MAX_SYNTH_VOICES = 28;
 
 export class VoicePool {
   private list: Voice[] = [];
-  constructor(private stats: NodeStats) {}
+  constructor(
+    private stats: NodeStats,
+    private max = MAX_SYNTH_VOICES,
+  ) {}
 
   get size() {
     return this.list.length;
@@ -57,7 +60,7 @@ export class VoicePool {
   }
 
   /** Make room for one more counted voice at time t by stealing the least important old voice. */
-  makeRoom(t: number, max = MAX_SYNTH_VOICES) {
+  makeRoom(t: number, max = this.max) {
     let guard = 0;
     let active = this.activeAt(t);
     if (active + 1 > this.stats.synthMax) this.stats.synthMax = Math.min(max, active + 1);

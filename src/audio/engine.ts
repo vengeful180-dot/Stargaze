@@ -7,6 +7,10 @@ import { NodeStats, setParam, sliderGain, softClipCurve } from './util';
 
 export type Ticker = (now: number, horizon: number) => void;
 
+/** 'high': HRTF panning, full room, chorus, 28 voices. 'low' (phones / weak CPUs): equal-power panning,
+ * a shorter room, no Rhodes chorus, 18 voices. */
+export type AudioQuality = 'high' | 'low';
+
 export class Engine {
   readonly ctx: BaseAudioContext;
   readonly stats = new NodeStats();
@@ -22,6 +26,9 @@ export class Engine {
   readonly ambVol: GainNode;
   readonly sfxVol: GainNode;
   readonly offline: boolean;
+  readonly quality: AudioQuality;
+  /** synth polyphony limit */
+  readonly maxVoices: number;
   /** seconds scheduled ahead of currentTime */
   lookahead = 0.2;
   hiddenLookahead = 1.6;
@@ -30,9 +37,11 @@ export class Engine {
   private vols = { master: 1, music: 1, ambience: 1, sfx: 1 };
   private hasListenerParams: boolean;
 
-  constructor(ctx: BaseAudioContext, opts: { offline?: boolean } = {}) {
+  constructor(ctx: BaseAudioContext, opts: { offline?: boolean; quality?: AudioQuality } = {}) {
     this.ctx = ctx;
     this.offline = !!opts.offline;
+    this.quality = opts.quality ?? 'high';
+    this.maxVoices = this.quality === 'low' ? 18 : 28;
     this.bank = new SampleBank(ctx);
 
     this.master = ctx.createGain();
@@ -47,7 +56,7 @@ export class Engine {
     pre.gain.value = 0.5;
     const clip = ctx.createWaveShaper();
     clip.curve = softClipCurve(0.8, 0.88, 2);
-    clip.oversample = '4x';
+    clip.oversample = '2x';
     this.master.connect(this.masterVol).connect(limiter).connect(pre).connect(clip);
     this.out = clip;
     clip.connect(ctx.destination);
@@ -55,7 +64,7 @@ export class Engine {
     // cabin room
     const conv = ctx.createConvolver();
     conv.normalize = false;
-    const [l, r] = renderRoomIR(ctx.sampleRate);
+    const [l, r] = renderRoomIR(ctx.sampleRate, this.quality === 'low' ? { rt60: 0.45 } : {});
     const ir = ctx.createBuffer(2, l.length, ctx.sampleRate);
     ir.copyToChannel(l, 0);
     ir.copyToChannel(r, 1);
@@ -158,7 +167,7 @@ export class Engine {
   /** A positional source in the cabin (HRTF), routed into `dest`. */
   makePanner(opts: Partial<PannerOptions> = {}): PannerNode {
     const p = this.ctx.createPanner();
-    p.panningModel = 'HRTF';
+    p.panningModel = this.quality === 'low' ? 'equalpower' : 'HRTF';
     p.distanceModel = 'inverse';
     p.refDistance = opts.refDistance ?? 0.6;
     p.maxDistance = opts.maxDistance ?? 30;

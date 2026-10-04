@@ -5,7 +5,8 @@ import { Ambience } from './ambience';
 import { Engine } from './engine';
 import { TRACK_GAP, planTrack } from './music/compose';
 import { Radio } from './radio';
-import { MIX } from './synth/band';
+import { makeStations } from './stations';
+import { BAND_DEBUG, MIX } from './synth/band';
 import { TUNER_LEVEL } from './tuner';
 import type { RadioInfo, StationDef, StationStyle } from './types';
 
@@ -15,7 +16,10 @@ export type OfflineAction =
   | { at: number; action: 'character'; value: number }
   | { at: number; action: 'power'; value: boolean }
   | { at: number; action: 'listener'; value: { pos: number[]; fwd: number[]; up?: number[] } }
-  | { at: number; action: 'ship'; value: { throttle?: number; speed?: number; warp?: number } };
+  | { at: number; action: 'ship'; value: { throttle?: number; speed?: number; warp?: number } }
+  | { at: number; action: 'band'; value: 'stations' | 'tape' | 'link' }
+  | { at: number; action: 'volume'; value: number }
+  | { at: number; action: 'stations'; value: number };
 
 export interface OfflineOptions {
   style: StationStyle;
@@ -45,6 +49,9 @@ export interface OfflineOptions {
   solo?: (keyof typeof MIX)[];
   /** capture the broadcast before the glue compressor (stem measurements) */
   rawMix?: boolean;
+  quality?: 'high' | 'low';
+  /** profiling: only keep these event streams (instrument ids, 'drums', 'fx') */
+  only?: string[];
 }
 
 export interface OfflineLogEntry {
@@ -85,9 +92,10 @@ export async function renderOffline(o: OfflineOptions): Promise<OfflineResult> {
     TUNER_LEVEL.floor = 0;
   }
   if (o.mix) Object.assign(MIX, o.mix);
+  BAND_DEBUG.only = o.only ?? null;
   try {
-    const eng = new Engine(ctx, { offline: true });
-    eng.lookahead = 0.25;
+    const eng = new Engine(ctx, { offline: true, quality: o.quality ?? 'high' });
+    eng.lookahead = Math.max(0.25, (o.step ?? 0.05) + 0.15);
     // reroute the final output into a 4-channel capture
     eng.out.disconnect();
     const merger = ctx.createChannelMerger(4);
@@ -151,6 +159,15 @@ export async function renderOffline(o: OfflineOptions): Promise<OfflineResult> {
         case 'ship':
           amb?.setShipState(a.value);
           break;
+        case 'band':
+          radio.setBand(a.value);
+          break;
+        case 'volume':
+          radio.setVolume(a.value);
+          break;
+        case 'stations':
+          radio.setStations(makeStations(a.value));
+          break;
       }
     };
     const onStep = (t: number) => {
@@ -182,6 +199,7 @@ export async function renderOffline(o: OfflineOptions): Promise<OfflineResult> {
     const renderMs = performance.now() - t0;
     return { buffer, stats: eng.stats.snapshot(), log, renderMs };
   } finally {
+    BAND_DEBUG.only = null;
     Object.assign(MIX, savedMix);
     TUNER_LEVEL.floor = savedFloor;
   }

@@ -13,7 +13,8 @@ export function renderRoomIR(fs: number, o: RoomOptions = {}): [F32, F32] {
   const rt = o.rt60 ?? 0.62;
   const pre = o.preDelay ?? 0.008;
   const seed = o.seed ?? 0x400d;
-  const len = Math.round(fs * (pre + rt * 1.5));
+  // the tail beyond ~1.25 x RT60 is below -50 dB: not worth convolving
+  const len = Math.round(fs * (pre + rt * 1.25));
   const out: [F32, F32] = [new Float32Array(len), new Float32Array(len)];
   const n = new Noise(seed);
   // early reflections

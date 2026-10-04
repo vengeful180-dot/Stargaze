@@ -9,7 +9,7 @@
 //   audio.ambience.setShipState({ throttle, speed, warp });
 import { Ambience } from './ambience';
 import { WorkerClock } from './clock';
-import { Engine } from './engine';
+import { type AudioQuality, Engine } from './engine';
 import { Radio } from './radio';
 import { Sfx } from './sfx';
 import type { Vec3, Volumes } from './types';
@@ -19,6 +19,7 @@ export { Ambience } from './ambience';
 export { Sfx } from './sfx';
 export { makeStations } from './stations';
 export type { StationDef, StationStyle, RadioInfo, RadioBand, SfxName, ShipState, Volumes, Vec3 } from './types';
+export type { AudioQuality } from './engine';
 export { STATION_STYLES, STYLE_LABELS, SFX_NAMES } from './types';
 
 type AudioContextCtor = typeof AudioContext;
@@ -34,10 +35,19 @@ export class AudioSystem {
   private listener: { pos: Vec3; fwd: Vec3; up: Vec3 } = { pos: [0, 1.15, 0], fwd: [0, 0, -1], up: [0, 1, 0] };
   private userSuspended = false;
   private unlocking: Promise<void> | null = null;
+  private quality: AudioQuality;
 
-  /** Creates the system without touching Web Audio (no AudioContext until unlock()). */
-  static create(): AudioSystem {
-    return new AudioSystem();
+  private constructor(quality: AudioQuality) {
+    this.quality = quality;
+  }
+
+  /**
+   * Creates the system without touching Web Audio (no AudioContext until unlock()).
+   * quality: 'high' (HRTF, full room) or 'low' for phones; defaults to 'low' on touch devices.
+   */
+  static create(opts: { quality?: AudioQuality } = {}): AudioSystem {
+    const touch = typeof navigator !== 'undefined' && (navigator.maxTouchPoints ?? 0) > 0 && typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+    return new AudioSystem(opts.quality ?? (touch ? 'low' : 'high'));
   }
 
   get ctx(): AudioContext | null {
@@ -73,7 +83,7 @@ export class AudioSystem {
     this._ctx = ctx;
     // resume synchronously inside the gesture (Safari requires this)
     const resumed = ctx.resume().catch(() => undefined);
-    const eng = new Engine(ctx);
+    const eng = new Engine(ctx, { quality: this.quality });
     this.eng = eng;
     eng.setVolumes(this.vols);
     eng.setListener(this.listener.pos, this.listener.fwd, this.listener.up);
