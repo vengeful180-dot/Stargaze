@@ -47,11 +47,10 @@ body {
   z-index: 2;
 }
 
-#ui > * {
-  pointer-events: auto;
-}
-
+/* children manage their own pointer-events: a blanket "#ui > * { auto }" outranked .hud's "none" and the
+   full-screen HUD and star-map layers swallowed every drag and click meant for the cabin */
 .fatal {
+  pointer-events: auto;
   max-width: 520px;
   margin: 18vh auto 0;
   padding: 28px 32px;
@@ -283,6 +282,11 @@ kbd {
 }
 .hud.boarded .speed {
   opacity: 0.85;
+}
+.speed {
+  font-size: 15px;
+  color: var(--ink-dim);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
 }
 .corner-btn {
   position: absolute;

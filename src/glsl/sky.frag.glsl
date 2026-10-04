@@ -197,6 +197,7 @@ void main() {
 
   // a whisper of unresolved stars where the band is bright; resolved stars are points (starfield.ts)
   float px = 1.5707963 / uSize;
-  col += starLayer(d, 220.0, clamp(band * 30.0, 0.0, 0.6), uStarBright, px * 0.7);
+  // (only in the band's bright core: sprinkled everywhere and magnified from the cube map it read as grain)
+  col += starLayer(d, 220.0, clamp((band - 0.012) * 18.0, 0.0, 0.4), uStarBright, px * 0.7);
   gl_FragColor = vec4(col, 1.0);
 }

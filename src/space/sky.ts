@@ -94,7 +94,7 @@ export class SkyGenerator {
         uPos: { value: new THREE.Vector3() },
         uSteps: { value: 48 },
         uBright: { value: Number(new URLSearchParams(location.search).get('mw') ?? 0.045) },
-        uStarBright: { value: 0.03 },
+        uStarBright: { value: 0.016 },
         uSeedOff: { value: new THREE.Vector3(rng.range(0, 100), rng.range(0, 100), rng.range(0, 100)) },
         uNebCount: { value: 0 },
         uNebA: { value: zero4() },

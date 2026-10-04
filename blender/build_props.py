@@ -208,7 +208,7 @@ def orrery():
             lambda k: "brass")
     parts.append(base)
     sun = K.Part("Light_OrrerySun", "emit_orrery")
-    sphere(sun, K.apply(M, [(0, 0, 0.222)])[0], 0.02, "emit_orrery", 20, "B")
+    sphere(sun, K.apply(M, [(0, 0, 0.217)])[0], 0.013, "emit_orrery", 20, "B")
     parts.append(sun)
     # each arm: a collar on the column, a bar out, a rod up to the planet plane; tiered so no arm can hit another.
     # Arms rest spread round (rest angle in the node's extras); the game turns each to its real planet.

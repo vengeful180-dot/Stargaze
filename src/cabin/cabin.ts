@@ -61,6 +61,66 @@ async function loadEncoded(url: string, scale: number): Promise<THREE.DataTextur
   return t;
 }
 
+/** the pilot's eye in the cabin's own frame (glTF: +Y up, forward -Z) */
+const PILOT_EYE = new THREE.Vector3(0, 1.17, -0.02);
+
+/**
+ * Put a canvas on a screen box's front face, upright and unmirrored as seen from `eye`: u to the viewer's right,
+ * v up. Done here from the geometry because the baked UVs came out rotated or mirrored per screen. Every other
+ * face of the box samples a corner of the canvas.
+ */
+function fitScreenUVs(mesh: THREE.Mesh, eye: THREE.Vector3) {
+  const g = mesh.geometry as THREE.BufferGeometry;
+  const pos = g.getAttribute('position') as THREE.BufferAttribute;
+  const nor = g.getAttribute('normal') as THREE.BufferAttribute;
+  let uv = g.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  if (!uv) {
+    uv = new THREE.BufferAttribute(new Float32Array(pos.count * 2), 2);
+    g.setAttribute('uv', uv);
+  }
+  const M = mesh.matrixWorld;
+  const NM = new THREE.Matrix3().getNormalMatrix(M);
+  const P = (i: number) => new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(M);
+  const N = (i: number) => new THREE.Vector3().fromBufferAttribute(nor, i).applyMatrix3(NM).normalize();
+  const centre = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) centre.add(P(i));
+  centre.divideScalar(pos.count);
+  const toEye = eye.clone().sub(centre).normalize();
+  const front = new THREE.Vector3();
+  let best = -2;
+  for (let i = 0; i < nor.count; i++) {
+    const n = N(i);
+    const d = n.dot(toEye);
+    if (d > best) {
+      best = d;
+      front.copy(n);
+    }
+  }
+  const right = new THREE.Vector3(0, 1, 0).cross(front).normalize();
+  const up = front.clone().cross(right);
+  const isFront: boolean[] = [];
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    const f = N(i).dot(front) > 0.98;
+    isFront.push(f);
+    if (!f) continue;
+    const p = P(i).sub(centre);
+    u0 = Math.min(u0, p.dot(right));
+    u1 = Math.max(u1, p.dot(right));
+    v0 = Math.min(v0, p.dot(up));
+    v1 = Math.max(v1, p.dot(up));
+  }
+  for (let i = 0; i < pos.count; i++) {
+    if (!isFront[i]) {
+      uv.setXY(i, 0.002, 0.002);
+      continue;
+    }
+    const p = P(i).sub(centre);
+    uv.setXY(i, (p.dot(right) - u0) / (u1 - u0), (p.dot(up) - v0) / (v1 - v0));
+  }
+  uv.needsUpdate = true;
+}
+
 export class Cabin {
   readonly root = new THREE.Group();
   readonly nodes = new Map<string, THREE.Object3D>();
@@ -144,6 +204,8 @@ export class Cabin {
         this.screens.set(m.name, m);
       }
     });
+    gltf.scene.updateMatrixWorld(true);
+    for (const m of this.screens.values()) fitScreenUVs(m, PILOT_EYE);
     this.root.add(gltf.scene);
     this.setLevels(this.levels);
     this.loaded = true;

@@ -79,6 +79,8 @@ export class App {
   private last = 0;
   private skyTarget: THREE.WebGLCubeRenderTarget | null = null;
   private tmp = new THREE.Vector3();
+  private dustLight = new THREE.Vector3();
+  private fovBoost = 0;
   private sunRad = new THREE.Vector3();
   ready = false;
 
@@ -186,6 +188,11 @@ export class App {
       const dir = look === 'gc' ? new THREE.Vector3(...this.systemRef.pos).negate().normalize() : new THREE.Vector3(...look.split(',').map(Number)).normalize();
       this.ship.lookAt(this.ship.pos.clone().addScaledVector(dir, 1e12), new THREE.Vector3(0, 1, 0));
       this.flight.mode = 'manual';
+    }
+    if (params.has('speed')) {
+      this.flight.mode = 'manual';
+      this.flight.throttle = 1;
+      this.ship.forward(this.ship.vel).multiplyScalar(Number(params.get('speed')));
     }
     if (params.has('nosys')) this.systemView!.root.visible = false;
     if (params.has('map')) this.map.show();
@@ -638,7 +645,14 @@ export class App {
     this.sun.intensity = sunI * Math.PI * 0.55;
     this.sun.position.copy(toStar).multiplyScalar(8);
     this.sun.target.position.set(0, 0, 0);
-    this.dust.update(this.ship.pos, this.ship.vel, sv.asteroids.inField, this.sunRad);
+    this.dustLight.copy(this.sunRad).clampScalar(0, 2.5);
+    this.dust.update(this.ship.vel, sv.asteroids.inField, this.dustLight, dt);
+    // speed widens the view a touch (warp sets its own field of view)
+    if (!this.warp) {
+      const sp01 = smoothstep(2.5, 9, Math.log10(1 + this.flight.speed));
+      this.fovBoost = damp(this.fovBoost, sp01 * 7, 1.5, dt);
+      this.rig.setFov(this.settings.fov + this.fovBoost);
+    }
 
     // the listener is the camera, in the ship's own frame (the radio and the cabin's sounds live there)
     this.camera.updateMatrixWorld();

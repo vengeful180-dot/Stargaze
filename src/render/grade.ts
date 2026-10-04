@@ -84,7 +84,7 @@ export class GradeEffect extends Effect {
         ['uSaturation', new Uniform(1.12)],
         ['uWhite', new Uniform(new Vector3(1, 1, 1))],
         ['uVignette', new Uniform(0.38)],
-        ['uGrain', new Uniform(0.3)],
+        ['uGrain', new Uniform(0.14)],
         ['uTime', new Uniform(0)],
         ['uAspect', new Uniform(new Vector2(1, 1))],
       ]),

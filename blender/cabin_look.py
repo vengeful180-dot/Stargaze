@@ -30,6 +30,7 @@ SIMPLE = {
     "enamel_cream": ((0.60, 0.54, 0.42), 0.32, 0.0),
     "leaf_dark": ((0.028, 0.055, 0.018), 0.6, 0.0),
     "wire": ((0.03, 0.04, 0.025), 0.4, 0.0),
+    "panel_teal": ((0.022, 0.068, 0.07), 0.36, 0.0),       # lacquered instrument panel
 }
 
 # emissive zones: (colour, strength, group). Strength is radiance in Blender units; the game reads it from the GLB
@@ -37,12 +38,13 @@ EMISSIVE = {
     "emit_warm": ((1.0, 0.68, 0.36), 60.0, "A"),
     "emit_strip": ((1.0, 0.62, 0.30), 9.0, "B"),
     "emit_screen": ((0.95, 0.62, 0.32), 2.2, "B"),
-    "emit_orrery": ((1.0, 0.72, 0.42), 6.0, "B"),
+    "emit_orrery": ((1.0, 0.55, 0.25), 3.5, "B"),
 }
 
 WOOD = {
     # name: (dark, light, roughness, ring scale, figure)
-    "walnut": ((0.085, 0.047, 0.026), (0.19, 0.11, 0.062), 0.38, 9.0, 0.9),
+    "walnut": ((0.10, 0.057, 0.032), (0.22, 0.13, 0.072), 0.38, 9.0, 0.9),
+    "oak": ((0.30, 0.19, 0.10), (0.50, 0.35, 0.19), 0.42, 7.0, 0.7),
     "wall_wood": ((0.20, 0.115, 0.062), (0.36, 0.22, 0.12), 0.55, 7.0, 0.6),
     "wall_wood_b": ((0.20, 0.115, 0.062), (0.36, 0.22, 0.12), 0.55, 7.0, 0.6),
     "ceiling_wood": ((0.32, 0.22, 0.13), (0.48, 0.35, 0.22), 0.6, 6.0, 0.5),
@@ -337,7 +339,7 @@ def material_for(zone):
     elif zone == "shade_fabric":
         m = make_translucent(zone, (0.72, 0.6, 0.44), 0.85, 0.55)
     elif zone == "plant":
-        m = make_translucent(zone, (0.045, 0.15, 0.035), 0.45, 0.25)
+        m = make_translucent(zone, (0.07, 0.21, 0.05), 0.45, 0.25)
     elif zone == "rug":
         m = make_rug()
     elif zone == "book":

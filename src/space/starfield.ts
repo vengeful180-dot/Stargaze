@@ -4,6 +4,8 @@ import { Rng, hash } from '../core/rng';
 import { blackbody } from '../core/color';
 import type { Galaxy, NearSystem, SystemRef } from './galaxy';
 
+// Each star is a point-spread function, not a blob: a crisp core about one device pixel wide carries the light,
+// and only bright stars grow a soft glow. (Faint stars drawn as 2-3 px grey discs read as gravel.)
 const vert = /* glsl */ `
 attribute vec3 aColor;
 attribute float aBright;
@@ -16,31 +18,40 @@ uniform float uHighlightId;
 attribute float aIndex;
 varying vec3 vColor;
 varying float vI;
+varying float vGlow;
+varying float vSize;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position * 1.0e10, 1.0);
   gl_Position = projectionMatrix * mv;
   gl_Position.z = 0.5 * gl_Position.w; // depth test is off; keep it inside the clip volume
   float b = aBright * uScale;
-  // faint stars keep a minimum footprint and lose intensity instead, so they do not shimmer
-  float size = clamp(1.6 + 2.6 * log2(1.0 + b * 4.0), 1.6, 9.0);
-  float tw = 1.0 + 0.06 * sin(uTime * (1.3 + aPhase * 2.0) + aPhase * 40.0);
+  float glow = clamp(log2(1.0 + b * 2.5), 0.0, 3.2);
+  float tw = 1.0 + 0.05 * sin(uTime * (1.3 + aPhase * 2.0) + aPhase * 40.0);
   float hl = (abs(aIndex - uHighlightId) < 0.5) ? uHighlight : 0.0;
-  gl_PointSize = (size + hl * 10.0) * uPixelRatio;
+  float size = (3.0 + glow * 6.0 + hl * 12.0) * uPixelRatio;
+  gl_PointSize = size;
+  vSize = size;
+  vGlow = glow + hl;
   vColor = aColor;
-  vI = min(b, 6.0) * tw + hl * 2.0;
+  vI = b * tw + hl * 1.5;
 }
 `;
 
 const frag = /* glsl */ `
+uniform float uPixelRatio;
 varying vec3 vColor;
 varying float vI;
+varying float vGlow;
+varying float vSize;
 void main() {
-  vec2 c = gl_PointCoord * 2.0 - 1.0;
+  vec2 c = (gl_PointCoord - 0.5) * vSize;          // device pixels from the centre
   float r2 = dot(c, c);
-  if (r2 > 1.0) discard;
-  float core = exp(-r2 * 10.0);
-  float halo = exp(-r2 * 3.0) * 0.22;
-  gl_FragColor = vec4(vColor * vI * (core + halo), 1.0);
+  float s = 0.6 * uPixelRatio;
+  float core = exp(-r2 / (2.0 * s * s));
+  float r = sqrt(r2) / uPixelRatio;
+  float halo = vGlow * 0.045 * exp(-r / (0.9 + vGlow * 1.1));
+  float edge = 1.0 - smoothstep(0.42, 0.5, length(gl_PointCoord - 0.5));
+  gl_FragColor = vec4(vColor * vI * (core + halo) * edge, 1.0);
 }
 `;
 
@@ -109,8 +120,10 @@ export class StarField {
       pos.set([x, y, z], i * 3);
       const t = rng.weighted([[3400, 3], [4500, 4], [5600, 4], [7000, 2], [10000, 1.2], [18000, 0.6]] as const) * rng.range(0.9, 1.1);
       col.set(blackbody(t), i * 3);
-      // power law: most are faint
-      bright[i] = 0.05 + Math.pow(rng.next(), 9) * 1.1;
+      // magnitudes: counts grow ~2.5x per magnitude, so nearly all sit at the edge of visibility and a handful
+      // shine (a flat 0.05 floor for every star made an even grey speckle)
+      const m = Math.max(0.6, 6.6 + Math.log(Math.max(1e-9, rng.next())) / Math.log(2.5));
+      bright[i] = 0.007 * Math.pow(10, 0.4 * (6.6 - m));
       phase[i] = rng.next();
     }
     const g = this.background.geometry;
@@ -144,8 +157,8 @@ export class StarField {
       pos[i * 3 + 1] = dy / l;
       pos[i * 3 + 2] = dz / l;
       col.set(s.ref.color, i * 3);
-      // map flux to a perceptual intensity; reference: a sun-like star at 10 ly ~ 0.6
-      bright[i] = Math.pow(flux(s) / 0.01, 0.45) * 0.6;
+      // map flux to a perceptual intensity; reference: a sun-like star at 10 ly ~ 0.5
+      bright[i] = Math.min(4, Math.pow(flux(s) / 0.01, 0.5) * 0.5);
       phase[i] = (s.ref.seed % 1000) / 1000;
       index[i] = i;
     }

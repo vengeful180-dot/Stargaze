@@ -221,7 +221,7 @@ def build_junction():
 
 
 def build_sill():
-    P = K.Part("Frame_Sill", "walnut")
+    P = K.Part("Frame_Sill", "oak")
     k = (L.ZS - L.ZC) / L.B
     a_ = L.A * math.sqrt(1 - k * k)
     c_ = L.CF * math.sqrt(1 - k * k)
@@ -232,7 +232,7 @@ def build_sill():
     nrm /= np.linalg.norm(nrm, axis=1, keepdims=True)
     sec = K.rounded_rect(L.SILL_W, L.SILL_H, 0.015, 3)
     sec[:, 0] += L.SILL_W / 2 - 0.035
-    K.sweep(P, path, sec, frames=K.section_frames(path, nrm), zone_fn=lambda j: "walnut")
+    K.sweep(P, path, sec, frames=K.section_frames(path, nrm), zone_fn=lambda j: "oak")
     return P
 
 
@@ -365,7 +365,7 @@ def build_console():
     parts.append(desk)
 
     # binnacle: a leaning instrument panel rising from the back of the desk
-    bin_ = K.Part("Console_Binnacle", "walnut")
+    bin_ = K.Part("Console_Binnacle", "panel_teal")
     phis = np.linspace(-L.BINNACLE_SPAN, L.BINNACLE_SPAN, 61)
     us = np.linspace(0.0, 1.0, 6)
     h = L.BINNACLE_TOP - (L.DESK_Z - 0.01)
@@ -379,11 +379,11 @@ def build_console():
         n = np.array([-math.sin(phi), -math.cos(phi), lean])
         return n / np.linalg.norm(n)
 
-    K.thick_patch(bin_, S, N, us, phis, L.BINNACLE_T, zone_fn=lambda i, j: "walnut")
+    K.thick_patch(bin_, S, N, us, phis, L.BINNACLE_T, zone_fn=lambda i, j: "panel_teal")
     parts.append(K.compact(bin_))
 
     # window-sill deck from the binnacle top to the sill beam
-    deck = K.Part("Console_Deck", "walnut")
+    deck = K.Part("Console_Deck", "oak")
     def r_sill(phi):
         return L.canopy_r_at(phi, L.ZS)
 
@@ -395,7 +395,7 @@ def build_console():
         r = r_in + v * (r_sill(phi) + 0.03 - r_in)
         return (r * math.sin(phi), r * math.cos(phi), L.DECK_Z)
 
-    K.thick_patch(deck, Sd, lambda phi, v: (0.0, 0.0, 1.0), dphis, vs, 0.03, zone_fn=lambda i, j: "walnut")
+    K.thick_patch(deck, Sd, lambda phi, v: (0.0, 0.0, 1.0), dphis, vs, 0.03, zone_fn=lambda i, j: "oak")
     parts.append(K.compact(deck))
 
     # cabinets under the wings and the knee-well back panel: their backs follow the hull (they used to run 30 cm
